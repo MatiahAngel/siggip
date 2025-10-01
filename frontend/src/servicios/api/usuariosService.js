@@ -1,11 +1,13 @@
-// 📁 UBICACIÓN: frontend/src/servicios/api/usuariosService.js
+// 📁 frontend/src/servicios/api/usuariosService.js
 // Servicio para manejar las peticiones API de usuarios
 
 import api from './cliente';
 
-// Obtener todos los usuarios
-export const getUsuarios = async () => {
-  const response = await api.get('/usuarios');
+// Obtener usuarios (por defecto solo activos; si pasas { estado: 'todos' } trae activos + inactivos)
+export const getUsuarios = async (opts = {}) => {
+  const params = {};
+  if (opts.estado === 'todos') params.estado = 'todos';
+  const response = await api.get('/usuarios', { params });
   return response.data;
 };
 
@@ -27,7 +29,7 @@ export const updateUsuario = async (id, data) => {
   return response.data;
 };
 
-// Eliminar usuario
+// Eliminar usuario (soft delete: estado = 'inactivo')
 export const deleteUsuario = async (id) => {
   const response = await api.delete(`/usuarios/${id}`);
   return response.data;

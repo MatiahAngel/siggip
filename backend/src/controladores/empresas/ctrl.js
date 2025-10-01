@@ -3,6 +3,8 @@
 
 import Empresa from '../../modelos/Empresa.js';
 import { Op } from 'sequelize';
+import { pool } from '../../configuracion/baseDatos.js';
+import bcrypt from 'bcryptjs';
 
 // Obtener todas las empresas
 export const getAll = async (req, res) => {
@@ -34,7 +36,7 @@ export const getAll = async (req, res) => {
 
     const empresas = await Empresa.findAll({
       where: whereClause,
-      order: [['fecha_creacion', 'DESC']], // existe en tu tabla
+      order: [['fecha_creacion', 'DESC']],
     });
 
     return res.json(empresas);
@@ -59,7 +61,7 @@ export const getOne = async (req, res) => {
   }
 };
 
-// Crear nueva empresa
+// Crear nueva empresa CON usuario asociado
 export const create = async (req, res) => {
   try {
     const {
@@ -76,7 +78,10 @@ export const create = async (req, res) => {
       contacto_principal,
       cargo_contacto,
       fecha_convenio,
-      estado_empresa, // opcional, por defecto 'activa'
+      estado_empresa,
+      // Nuevos campos para crear usuario
+      crear_usuario = true, // Por defecto crear usuario
+      password_usuario,
     } = req.body;
 
     // Validaciones básicas
@@ -84,7 +89,7 @@ export const create = async (req, res) => {
       return res.status(400).json({ error: 'RUT y razón social son obligatorios' });
     }
 
-    // Validar formato RUT (simple)
+    // Validar formato RUT
     const rutRegex = /^[0-9]{7,8}-[0-9Kk]$/;
     if (!rutRegex.test(rut_empresa)) {
       return res.status(400).json({ error: 'Formato de RUT inválido. Use formato: 12345678-9' });
@@ -101,7 +106,18 @@ export const create = async (req, res) => {
       return res.status(400).json({ error: 'El RUT de empresa ya está registrado' });
     }
 
-    // Crear empresa
+    // Si se va a crear usuario, validar email único
+    if (crear_usuario && email_contacto) {
+      const checkEmail = await pool.query(
+        'SELECT id_usuario FROM siggip.usuarios WHERE email = $1',
+        [email_contacto.toLowerCase()]
+      );
+      if (checkEmail.rows.length > 0) {
+        return res.status(400).json({ error: 'El email ya está registrado como usuario' });
+      }
+    }
+
+    // Crear empresa usando Sequelize
     const nuevaEmpresa = await Empresa.create({
       rut_empresa,
       razon_social,
@@ -117,10 +133,66 @@ export const create = async (req, res) => {
       cargo_contacto,
       fecha_convenio: fecha_convenio || null,
       estado_empresa: estado_empresa || 'activa',
-      // fecha_creacion la setea el default del modelo/BD
     });
 
-    return res.status(201).json(nuevaEmpresa);
+    // ✅ CREAR USUARIO DE EMPRESA Y VINCULARLO
+    if (crear_usuario && email_contacto && contacto_principal) {
+      try {
+        // Generar contraseña por defecto si no se proporciona
+        const password = password_usuario || 'Empresa123!'; // Cambiar por política de tu empresa
+        const passwordHash = await bcrypt.hash(password, 10);
+
+        // Dividir nombre del contacto en partes
+        const nombreParts = contacto_principal.trim().split(' ');
+        const nombre = nombreParts[0] || 'Empresa';
+        const apellido_paterno = nombreParts[1] || razon_social.split(' ')[0];
+        const apellido_materno = nombreParts[2] || '';
+
+        // Crear usuario
+        const insertUsuario = await pool.query(
+          `INSERT INTO siggip.usuarios 
+           (email, password_hash, nombre, apellido_paterno, apellido_materno, rut, tipo_usuario, estado) 
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8) 
+           RETURNING id_usuario`,
+          [
+            email_contacto.toLowerCase(),
+            passwordHash,
+            nombre,
+            apellido_paterno,
+            apellido_materno,
+            rut_empresa, // Usar RUT de empresa como RUT del usuario
+            'empresa',
+            'activo'
+          ]
+        );
+
+        const id_usuario = insertUsuario.rows[0].id_usuario;
+
+        // Vincular usuario con empresa en usuarios_empresa
+        await pool.query(
+          `INSERT INTO siggip.usuarios_empresa 
+           (id_usuario, id_empresa, cargo_usuario, es_contacto_principal) 
+           VALUES ($1, $2, $3, $4)`,
+          [
+            id_usuario,
+            nuevaEmpresa.id_empresa,
+            cargo_contacto || 'Representante Legal',
+            true
+          ]
+        );
+
+        console.log(`✅ Usuario creado y vinculado a empresa ${razon_social}`);
+      } catch (errorUsuario) {
+        console.error('Error al crear usuario de empresa:', errorUsuario);
+        // No fallar la creación de empresa si falla el usuario
+        // Solo registrar el error
+      }
+    }
+
+    return res.status(201).json({
+      ...nuevaEmpresa.toJSON(),
+      usuario_creado: crear_usuario && email_contacto && contacto_principal
+    });
   } catch (error) {
     console.error('Error al crear empresa:', error);
     return res.status(500).json({ error: 'Error al crear empresa' });
@@ -201,6 +273,16 @@ export const deleteEmpresa = async (req, res) => {
     if (!empresa) return res.status(404).json({ error: 'Empresa no encontrada' });
 
     await empresa.update({ estado_empresa: 'inactiva' });
+
+    // También desactivar usuarios asociados
+    await pool.query(
+      `UPDATE siggip.usuarios 
+       SET estado = 'inactivo' 
+       WHERE id_usuario IN (
+         SELECT id_usuario FROM siggip.usuarios_empresa WHERE id_empresa = $1
+       )`,
+      [id]
+    );
 
     return res.json({ message: 'Empresa desactivada correctamente' });
   } catch (error) {

@@ -1,13 +1,21 @@
-// 📁 UBICACIÓN: backend/src/controladores/usuarios/ctrl.js
-// Controlador para gestionar usuarios
-
+// 📁 backend/src/controladores/usuarios/ctrl.js
 import bcrypt from 'bcryptjs';
 import Usuario from '../../modelos/Usuario.js';
+import Estudiante from '../../modelos/estudiante.js';
+import Docente from '../../modelos/docente.js';
 
-// Obtener todos los usuarios
+const compact = (obj) =>
+  Object.fromEntries(Object.entries(obj).filter(([, v]) => v !== undefined));
+
+// ─────────────────────────────────────────────────────────────────────────────
 export const getAll = async (req, res) => {
   try {
+    // por defecto solo activos; si quieres todos, usa ?estado=todos
+    const { estado } = req.query;
+    const where = estado === 'todos' ? {} : { estado: 'activo' };
+
     const usuarios = await Usuario.findAll({
+      where,
       attributes: { exclude: ['password_hash'] },
       order: [['id_usuario', 'DESC']],
     });
@@ -19,17 +27,24 @@ export const getAll = async (req, res) => {
   }
 };
 
-// Obtener un usuario por ID
+// ─────────────────────────────────────────────────────────────────────────────
 export const getOne = async (req, res) => {
   try {
     const { id } = req.params;
-
     const usuario = await Usuario.findByPk(id, {
       attributes: { exclude: ['password_hash'] },
     });
 
-    if (!usuario) {
-      return res.status(404).json({ error: 'Usuario no encontrado' });
+    if (!usuario) return res.status(404).json({ error: 'Usuario no encontrado' });
+
+    if (usuario.tipo_usuario === 'estudiante') {
+      const estudiante = await Estudiante.findOne({ where: { id_usuario: id } });
+      return res.json({ ...usuario.toJSON(), datosEstudiante: estudiante });
+    }
+
+    if (usuario.tipo_usuario === 'profesor') {
+      const docente = await Docente.findOne({ where: { id_usuario: id } });
+      return res.json({ ...usuario.toJSON(), datosDocente: docente });
     }
 
     return res.json(usuario);
@@ -39,7 +54,7 @@ export const getOne = async (req, res) => {
   }
 };
 
-// Crear nuevo usuario
+// ─────────────────────────────────────────────────────────────────────────────
 export const create = async (req, res) => {
   try {
     const {
@@ -51,39 +66,38 @@ export const create = async (req, res) => {
       telefono,
       tipo_usuario,
       password,
+      id_especialidad,
+      ano_ingreso,
+      titulo_profesional,
+      anos_experiencia,
+      codigo_profesor,
+      cargo,
+      estado_laboral,
+      estado,
     } = req.body;
 
-    // Validaciones
     if (!nombre || !apellido_paterno || !email || !rut || !tipo_usuario || !password) {
       return res.status(400).json({ error: 'Faltan campos obligatorios' });
     }
-
-    // Validar email
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       return res.status(400).json({ error: 'Email inválido' });
     }
-
-    // Validar que password tenga al menos 6 caracteres
     if (password.length < 6) {
       return res.status(400).json({ error: 'La contraseña debe tener al menos 6 caracteres' });
     }
 
-    // Verificar que el email no exista
     const existeEmail = await Usuario.findOne({ where: { email: email.toLowerCase() } });
-    if (existeEmail) {
-      return res.status(400).json({ error: 'El email ya está registrado' });
-    }
+    if (existeEmail) return res.status(400).json({ error: 'El email ya está registrado' });
 
-    // Verificar que el RUT no exista
     const existeRut = await Usuario.findOne({ where: { rut } });
-    if (existeRut) {
-      return res.status(400).json({ error: 'El RUT ya está registrado' });
+    if (existeRut) return res.status(400).json({ error: 'El RUT ya está registrado' });
+
+    if (tipo_usuario === 'estudiante' && !id_especialidad) {
+      return res.status(400).json({ error: 'La especialidad es obligatoria para estudiantes' });
     }
 
-    // Hash de la contraseña
     const password_hash = await bcrypt.hash(password, 10);
 
-    // Crear usuario
     const nuevoUsuario = await Usuario.create({
       nombre,
       apellido_paterno,
@@ -93,13 +107,28 @@ export const create = async (req, res) => {
       telefono,
       tipo_usuario,
       password_hash,
-      estado: 'activo',
+      estado: estado || 'activo',
     });
 
-    // Retornar sin el password_hash
+    if (tipo_usuario === 'estudiante') {
+      await Estudiante.create({
+        id_usuario: nuevoUsuario.id_usuario,
+        id_especialidad,
+        ano_ingreso: ano_ingreso || new Date().getFullYear(),
+      });
+    } else if (tipo_usuario === 'profesor') {
+      await Docente.create({
+        id_usuario: nuevoUsuario.id_usuario,
+        titulo_profesional: titulo_profesional || '',
+        anos_experiencia: Number(anos_experiencia) || 0,
+        codigo_profesor: codigo_profesor || '',
+        cargo: cargo || 'Profesor',
+        estado_laboral: estado_laboral || 'activo', // mapea a estado_profesor
+      });
+    }
+
     const usuarioResponse = nuevoUsuario.toJSON();
     delete usuarioResponse.password_hash;
-
     return res.status(201).json(usuarioResponse);
   } catch (error) {
     console.error('Error al crear usuario:', error);
@@ -107,10 +136,14 @@ export const create = async (req, res) => {
   }
 };
 
-// Actualizar usuario
+// ─────────────────────────────────────────────────────────────────────────────
 export const update = async (req, res) => {
   try {
     const { id } = req.params;
+
+    const usuario = await Usuario.findByPk(id);
+    if (!usuario) return res.status(404).json({ error: 'Usuario no encontrado' });
+
     const {
       nombre,
       apellido_paterno,
@@ -120,60 +153,94 @@ export const update = async (req, res) => {
       telefono,
       tipo_usuario,
       password,
+      estado, // permitir re-activar/desactivar usuario
+      // estudiante
+      id_especialidad,
+      ano_ingreso,
+      // profesor
+      titulo_profesional,
+      anos_experiencia,
+      codigo_profesor,
+      cargo,
+      estado_laboral,
     } = req.body;
 
-    const usuario = await Usuario.findByPk(id);
-    if (!usuario) {
-      return res.status(404).json({ error: 'Usuario no encontrado' });
-    }
-
-    // Validar email si cambió
     if (email && email !== usuario.email) {
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
         return res.status(400).json({ error: 'Email inválido' });
       }
-      const existeEmail = await Usuario.findOne({
-        where: { email: email.toLowerCase() },
-      });
-      if (existeEmail && existeEmail.id_usuario !== parseInt(id)) {
+      const existeEmail = await Usuario.findOne({ where: { email: email.toLowerCase() } });
+      if (existeEmail && existeEmail.id_usuario !== Number(id)) {
         return res.status(400).json({ error: 'El email ya está en uso' });
       }
     }
-
-    // Validar RUT si cambió
     if (rut && rut !== usuario.rut) {
       const existeRut = await Usuario.findOne({ where: { rut } });
-      if (existeRut && existeRut.id_usuario !== parseInt(id)) {
+      if (existeRut && existeRut.id_usuario !== Number(id)) {
         return res.status(400).json({ error: 'El RUT ya está en uso' });
       }
     }
 
-    // Preparar datos a actualizar
-    const datosActualizar = {
-      nombre: nombre || usuario.nombre,
-      apellido_paterno: apellido_paterno || usuario.apellido_paterno,
-      apellido_materno: apellido_materno || usuario.apellido_materno,
-      email: email ? email.toLowerCase() : usuario.email,
-      rut: rut || usuario.rut,
-      telefono: telefono || usuario.telefono,
-      tipo_usuario: tipo_usuario || usuario.tipo_usuario,
-    };
+    const usuarioPayload = compact({
+      nombre,
+      apellido_paterno,
+      apellido_materno,
+      email: email?.toLowerCase(),
+      rut,
+      telefono,
+      tipo_usuario,
+      estado,
+    });
 
-    // Si se proporciona nueva contraseña, hashearla
     if (password) {
       if (password.length < 6) {
         return res.status(400).json({ error: 'La contraseña debe tener al menos 6 caracteres' });
       }
-      datosActualizar.password_hash = await bcrypt.hash(password, 10);
+      usuarioPayload.password_hash = await bcrypt.hash(password, 10);
     }
 
-    // Actualizar
-    await usuario.update(datosActualizar);
+    if (Object.keys(usuarioPayload).length) {
+      await usuario.update(usuarioPayload);
+    }
 
-    // Retornar sin el password_hash
+    const tipoActual = usuarioPayload.tipo_usuario || usuario.tipo_usuario;
+
+    if (tipoActual === 'estudiante') {
+      const estudiante = await Estudiante.findOne({ where: { id_usuario: id } });
+      const estPayload = compact({
+        id_especialidad,
+        ano_ingreso,
+      });
+
+      if (estudiante) {
+        if (Object.keys(estPayload).length) await estudiante.update(estPayload);
+      } else if (Object.keys(estPayload).length) {
+        await Estudiante.create({ id_usuario: usuario.id_usuario, ...estPayload });
+      }
+    }
+
+    if (tipoActual === 'profesor') {
+      const docente = await Docente.findOne({ where: { id_usuario: id } });
+      const docPayload = compact({
+        titulo_profesional: titulo_profesional?.trim(),
+        anos_experiencia:
+          anos_experiencia !== undefined && anos_experiencia !== null
+            ? Number(anos_experiencia)
+            : undefined,
+        codigo_profesor,
+        cargo,
+        estado_laboral, // mapea en el modelo
+      });
+
+      if (docente) {
+        if (Object.keys(docPayload).length) await docente.update(docPayload);
+      } else if (Object.keys(docPayload).length) {
+        await Docente.create({ id_usuario: usuario.id_usuario, ...docPayload });
+      }
+    }
+
     const usuarioResponse = usuario.toJSON();
     delete usuarioResponse.password_hash;
-
     return res.json(usuarioResponse);
   } catch (error) {
     console.error('Error al actualizar usuario:', error);
@@ -181,21 +248,23 @@ export const update = async (req, res) => {
   }
 };
 
-// Eliminar usuario
+// ─────────────────────────────────────────────────────────────────────────────
 export const deleteUser = async (req, res) => {
   try {
     const { id } = req.params;
-
     const usuario = await Usuario.findByPk(id);
-    if (!usuario) {
-      return res.status(404).json({ error: 'Usuario no encontrado' });
+    if (!usuario) return res.status(404).json({ error: 'Usuario no encontrado' });
+
+    // soft delete del usuario
+    await usuario.update({ estado: 'inactivo' });
+
+    // si es profesor, inactiva también su registro en profesores
+    if (usuario.tipo_usuario === 'profesor') {
+      await Docente.update(
+        { estado_laboral: 'inactivo' }, // mapea a estado_profesor
+        { where: { id_usuario: id } }
+      );
     }
-
-    // Opción 1: Eliminar físicamente (comentar si prefieres desactivar)
-    await usuario.destroy();
-
-    // Opción 2: Desactivar en lugar de eliminar (descomentar si prefieres)
-    // await usuario.update({ estado: 'inactivo' });
 
     return res.json({ message: 'Usuario eliminado correctamente' });
   } catch (error) {

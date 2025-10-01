@@ -1,4 +1,6 @@
 // 📁 frontend/src/paginas/admin/especialidades/FormularioEspecialidad.jsx
+// 🎨 Formulario de Especialidad — ESTILO ALTO CONTRASTE (coherente con ofertas)
+
 import { useEffect, useState } from 'react';
 import { createEspecialidad, updateEspecialidad } from '../../../servicios/api/especialidadesService';
 
@@ -10,10 +12,19 @@ export default function FormularioEspecialidad({ especialidad, onClose, onSaved 
     duracion_practica_min: '',
     duracion_practica_max: '',
     sector_economico: '',
-    estado: 'activo', // valores reales en tu BD
+    estado: 'activo', // valores reales en BD: 'activo' | 'inactivo'
   });
   const [errors, setErrors] = useState({});
   const [saving, setSaving] = useState(false);
+
+  // helpers visuales (match con ofertas)
+  const getEstadoBadge = (estado) => {
+    const st = (estado || '').toLowerCase();
+    if (st === 'activo') return 'bg-emerald-500 text-white';
+    if (st === 'inactivo') return 'bg-slate-500 text-white';
+    return 'bg-slate-500 text-white';
+  };
+  const getEstadoIcon = (estado) => ((estado || '').toLowerCase() === 'activo' ? '✅' : '⏸️');
 
   useEffect(() => {
     if (especialidad) {
@@ -29,25 +40,42 @@ export default function FormularioEspecialidad({ especialidad, onClose, onSaved 
     }
   }, [especialidad]);
 
+  const normalizeNumber = (v) => (v === '' ? '' : Math.max(0, Number(v)));
+
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setForm(prev => ({ ...prev, [name]: value }));
-    if (errors[name]) setErrors(prev => ({ ...prev, [name]: '' }));
+    const numeric = ['duracion_practica_min', 'duracion_practica_max'];
+    const val = numeric.includes(name) ? normalizeNumber(value) : value;
+    setForm((prev) => ({ ...prev, [name]: val }));
+    if (errors[name]) setErrors((prev) => ({ ...prev, [name]: '' }));
+    // validación en vivo cuando cambian mínimos/máximos
+    if (name === 'duracion_practica_min' || name === 'duracion_practica_max') {
+      validate({ ...form, [name]: val });
+    }
   };
 
-  const validate = () => {
+  const validate = (data = form) => {
     const errs = {};
-    if (!form.nombre_especialidad?.trim()) {
+    if (!data.nombre_especialidad?.trim()) {
       errs.nombre_especialidad = 'El nombre de la especialidad es obligatorio';
     }
-    // validaciones opcionales de números
-    const min = parseInt(form.duracion_practica_min || 0, 10);
-    const max = parseInt(form.duracion_practica_max || 0, 10);
-    if (form.duracion_practica_min && isNaN(min)) errs.duracion_practica_min = 'Debe ser un número';
-    if (form.duracion_practica_max && isNaN(max)) errs.duracion_practica_max = 'Debe ser un número';
-    if (!isNaN(min) && !isNaN(max) && min && max && min > max) {
+
+    // números
+    const min = Number(data.duracion_practica_min);
+    const max = Number(data.duracion_practica_max);
+    if (data.duracion_practica_min !== '' && Number.isNaN(min)) errs.duracion_practica_min = 'Debe ser un número';
+    if (data.duracion_practica_max !== '' && Number.isNaN(max)) errs.duracion_practica_max = 'Debe ser un número';
+
+    if (
+      data.duracion_practica_min !== '' &&
+      data.duracion_practica_max !== '' &&
+      !Number.isNaN(min) &&
+      !Number.isNaN(max) &&
+      min > max
+    ) {
       errs.duracion_practica_max = 'El máximo debe ser ≥ al mínimo';
     }
+
     setErrors(errs);
     return Object.keys(errs).length === 0;
   };
@@ -71,137 +99,276 @@ export default function FormularioEspecialidad({ especialidad, onClose, onSaved 
     }
   };
 
+  // preview rápido de rango
+  const rangoTexto = (() => {
+    const min = form.duracion_practica_min === '' ? null : Number(form.duracion_practica_min);
+    const max = form.duracion_practica_max === '' ? null : Number(form.duracion_practica_max);
+    if (min && max) return `${min}–${max} h`;
+    if (min && !max) return `≥ ${min} h`;
+    if (!min && max) return `≤ ${max} h`;
+    return '—';
+  })();
+
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white w-full max-w-3xl rounded-xl shadow-xl overflow-hidden">
-        {/* Header */}
-        <div className="px-6 py-4 border-b flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-gray-900">
-            {especialidad ? 'Editar Especialidad' : 'Nueva Especialidad'}
-          </h2>
-          <button onClick={onClose} className="text-gray-500 hover:text-gray-700">
-            ✕
+      <div className="bg-white rounded-xl shadow-2xl max-w-3xl w-full max-h-[92vh] flex flex-col overflow-hidden">
+        {/* Header degradado fijo (coherente con ofertas) */}
+        <div className="relative bg-gradient-to-r from-indigo-600 to-blue-600 text-white p-6 rounded-t-xl flex-shrink-0">
+          <button
+            onClick={onClose}
+            className="absolute top-4 right-4 w-8 h-8 bg-white/20 hover:bg-white/30 rounded-lg flex items-center justify-center transition-colors"
+            aria-label="Cerrar"
+          >
+            <span className="text-xl leading-none font-bold">✕</span>
           </button>
+
+          <div className="flex items-start gap-4 pr-12">
+            <div className="w-16 h-16 bg-white rounded-lg flex items-center justify-center flex-shrink-0 shadow-lg">
+              <span className="text-3xl">🎓</span>
+            </div>
+
+            <div className="flex-1 min-w-0">
+              <div className="flex flex-wrap items-center gap-2 mb-2">
+                {especialidad ? (
+                  <span className={`px-3 py-1.5 rounded-lg text-xs font-bold ${getEstadoBadge(form.estado)} flex items-center gap-1.5 shadow-md`}>
+                    <span>{getEstadoIcon(form.estado)}</span>
+                    <span className="capitalize">{(form.estado || '').toLowerCase()}</span>
+                  </span>
+                ) : (
+                  <span className="px-3 py-1.5 bg-white text-indigo-700 rounded-lg text-xs font-bold shadow-md">
+                    Nueva Especialidad
+                  </span>
+                )}
+                <span className="px-3 py-1.5 bg-white text-indigo-700 rounded-lg text-xs font-bold shadow-md">
+                  {form.codigo_especialidad?.trim() ? `Código: ${form.codigo_especialidad}` : 'Sin código'}
+                </span>
+              </div>
+
+              <h1 className="text-2xl font-bold mb-1 break-words">
+                {form.nombre_especialidad?.trim() || (especialidad ? 'Editar Especialidad' : 'Crear Especialidad')}
+              </h1>
+              <p className="text-blue-100 text-sm flex items-center gap-1.5">
+                <span>⏱️</span>
+                <span>Rango de práctica: {rangoTexto}</span>
+              </p>
+            </div>
+          </div>
         </div>
 
-        {/* Form */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Código</label>
-              <input
-                name="codigo_especialidad"
-                value={form.codigo_especialidad}
-                onChange={handleChange}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500"
-                placeholder="MECA, AGRO, etc."
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Nombre *</label>
-              <input
-                name="nombre_especialidad"
-                value={form.nombre_especialidad}
-                onChange={handleChange}
-                className={`w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 ${
-                  errors.nombre_especialidad ? 'border-red-500' : 'border-gray-300'
-                }`}
-                placeholder="Mecánica Industrial"
-              />
-              {errors.nombre_especialidad && (
-                <p className="text-red-500 text-xs mt-1">{errors.nombre_especialidad}</p>
-              )}
-            </div>
-
-            <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Descripción</label>
-              <textarea
-                name="descripcion"
-                value={form.descripcion}
-                onChange={handleChange}
-                rows={3}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500"
-                placeholder="Descripción breve de la especialidad"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Duración práctica (mín)</label>
-              <input
-                name="duracion_practica_min"
-                value={form.duracion_practica_min}
-                onChange={handleChange}
-                className={`w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 ${
-                  errors.duracion_practica_min ? 'border-red-500' : 'border-gray-300'
-                }`}
-                placeholder="360"
-              />
-              {errors.duracion_practica_min && (
-                <p className="text-red-500 text-xs mt-1">{errors.duracion_practica_min}</p>
-              )}
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Duración práctica (máx)</label>
-              <input
-                name="duracion_practica_max"
-                value={form.duracion_practica_max}
-                onChange={handleChange}
-                className={`w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 ${
-                  errors.duracion_practica_max ? 'border-red-500' : 'border-gray-300'
-                }`}
-                placeholder="540"
-              />
-              {errors.duracion_practica_max && (
-                <p className="text-red-500 text-xs mt-1">{errors.duracion_practica_max}</p>
-              )}
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Sector económico</label>
-              <input
-                name="sector_economico"
-                value={form.sector_economico}
-                onChange={handleChange}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500"
-                placeholder="Metalmecánico, Agrícola…"
-              />
-            </div>
-
-            {especialidad && (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Estado</label>
-                <select
-                  name="estado"
-                  value={form.estado}
-                  onChange={handleChange}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="activo">Activo</option>
-                  <option value="inactivo">Inactivo</option>
-                </select>
+        {/* Contenido scrollable */}
+        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 bg-gray-50">
+          {/* Stats rápidos */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+            <div className="bg-white p-4 rounded-lg border-2 border-blue-200 shadow-sm">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-2xl">🏷️</span>
+                <span className="text-xs text-gray-600 font-semibold uppercase">Código</span>
               </div>
-            )}
+              <p className="font-bold text-gray-900 text-lg">{form.codigo_especialidad || '—'}</p>
+            </div>
+
+            <div className="bg-white p-4 rounded-lg border-2 border-purple-200 shadow-sm">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-2xl">⏰</span>
+                <span className="text-xs text-gray-600 font-semibold uppercase">Duración mín.</span>
+              </div>
+              <p className="font-bold text-gray-900 text-lg">
+                {form.duracion_practica_min !== '' ? `${form.duracion_practica_min} h` : '—'}
+              </p>
+            </div>
+
+            <div className="bg-white p-4 rounded-lg border-2 border-emerald-200 shadow-sm">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-2xl">🕐</span>
+                <span className="text-xs text-gray-600 font-semibold uppercase">Duración máx.</span>
+              </div>
+              <p className="font-bold text-gray-900 text-lg">
+                {form.duracion_practica_max !== '' ? `${form.duracion_practica_max} h` : '—'}
+              </p>
+            </div>
           </div>
 
-          <div className="flex justify-end gap-3 pt-4 border-t">
+          {/* Sección Información principal */}
+          <section className="mb-6">
+            <div className="flex items-center gap-2 mb-3">
+              <div className="w-10 h-10 bg-indigo-600 rounded-lg flex items-center justify-center">
+                <span className="text-xl">📋</span>
+              </div>
+              <h2 className="text-lg font-bold text-gray-900">Información principal</h2>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Código */}
+              <div className="p-4 bg-white rounded-lg border-2 border-gray-300 shadow-sm">
+                <label className="block text-xs text-gray-600 font-semibold uppercase mb-2">Código</label>
+                <input
+                  name="codigo_especialidad"
+                  value={form.codigo_especialidad}
+                  onChange={handleChange}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500"
+                  placeholder="MECA, AGRO, etc."
+                />
+              </div>
+
+              {/* Nombre */}
+              <div className={`p-4 bg-white rounded-lg border-2 ${errors.nombre_especialidad ? 'border-red-400' : 'border-gray-300'} shadow-sm`}>
+                <label className="block text-xs text-gray-600 font-semibold uppercase mb-2">
+                  Nombre <span className="text-red-500">*</span>
+                </label>
+                <input
+                  name="nombre_especialidad"
+                  value={form.nombre_especialidad}
+                  onChange={handleChange}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500"
+                  placeholder="Mecánica Industrial"
+                />
+                {errors.nombre_especialidad && (
+                  <p className="text-red-500 text-xs mt-1">{errors.nombre_especialidad}</p>
+                )}
+              </div>
+
+              {/* Descripción */}
+              <div className="md:col-span-2 p-4 bg-white rounded-lg border-2 border-gray-300 shadow-sm">
+                <label className="block text-xs text-gray-600 font-semibold uppercase mb-2">Descripción</label>
+                <textarea
+                  name="descripcion"
+                  value={form.descripcion}
+                  onChange={handleChange}
+                  rows={3}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500"
+                  placeholder="Descripción breve de la especialidad"
+                />
+              </div>
+            </div>
+          </section>
+
+          {/* Sección Detalles */}
+          <section className="mb-2">
+            <div className="flex items-center gap-2 mb-3">
+              <div className="w-10 h-10 bg-indigo-600 rounded-lg flex items-center justify-center">
+                <span className="text-xl">⚙️</span>
+              </div>
+              <h2 className="text-lg font-bold text-gray-900">Detalles de práctica</h2>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Duración min */}
+              <div className={`flex items-center gap-3 p-4 bg-white rounded-lg border-2 ${errors.duracion_practica_min ? 'border-red-400' : 'border-gray-300'} shadow-sm`}>
+                <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                  <span className="text-2xl">⏰</span>
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs text-gray-600 font-semibold uppercase mb-1">Duración práctica (mín)</p>
+                  <input
+                    type="number"
+                    name="duracion_practica_min"
+                    value={form.duracion_practica_min}
+                    onChange={handleChange}
+                    min="0"
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500"
+                    placeholder="360"
+                  />
+                  {errors.duracion_practica_min && (
+                    <p className="text-red-500 text-xs mt-1">{errors.duracion_practica_min}</p>
+                  )}
+                </div>
+              </div>
+
+              {/* Duración max */}
+              <div className={`flex items-center gap-3 p-4 bg-white rounded-lg border-2 ${errors.duracion_practica_max ? 'border-red-400' : 'border-gray-300'} shadow-sm`}>
+                <div className="w-12 h-12 bg-emerald-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                  <span className="text-2xl">🕐</span>
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs text-gray-600 font-semibold uppercase mb-1">Duración práctica (máx)</p>
+                  <input
+                    type="number"
+                    name="duracion_practica_max"
+                    value={form.duracion_practica_max}
+                    onChange={handleChange}
+                    min="0"
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500"
+                    placeholder="540"
+                  />
+                  {errors.duracion_practica_max && (
+                    <p className="text-red-500 text-xs mt-1">{errors.duracion_practica_max}</p>
+                  )}
+                </div>
+              </div>
+
+              {/* Sector económico */}
+              <div className="flex items-center gap-3 p-4 bg-white rounded-lg border-2 border-gray-300 shadow-sm md:col-span-2">
+                <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                  <span className="text-2xl">🏭</span>
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs text-gray-600 font-semibold uppercase mb-1">Sector económico</p>
+                  <input
+                    name="sector_economico"
+                    value={form.sector_economico}
+                    onChange={handleChange}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500"
+                    placeholder="Metalmecánico, Agrícola…"
+                  />
+                </div>
+              </div>
+
+              {/* Estado (solo al editar) */}
+              {especialidad && (
+                <div className="flex items-center gap-3 p-4 bg-white rounded-lg border-2 border-gray-300 shadow-sm">
+                  <div className="w-12 h-12 bg-slate-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <span className="text-2xl">{getEstadoIcon(form.estado)}</span>
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs text-gray-600 font-semibold uppercase mb-1">Estado</p>
+                    <select
+                      name="estado"
+                      value={form.estado}
+                      onChange={handleChange}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="activo">Activo</option>
+                      <option value="inactivo">Inactivo</option>
+                    </select>
+                  </div>
+                </div>
+              )}
+            </div>
+          </section>
+        </form>
+
+        {/* Footer fijo con acciones */}
+        <div className="border-t-2 bg-white px-6 py-4 rounded-b-xl flex-shrink-0">
+          <div className="flex flex-col sm:flex-row gap-3">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg"
+              disabled={saving}
+              className="flex-1 px-4 py-2.5 border-2 border-gray-400 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors font-semibold disabled:opacity-50"
             >
               Cancelar
             </button>
             <button
               type="submit"
+              onClick={(e) => {
+                // dispara el submit del form anterior
+                const formEl = e.currentTarget.closest('div').parentElement.previousElementSibling;
+                formEl?.requestSubmit?.();
+              }}
               disabled={saving}
-              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg disabled:opacity-50"
+              className="flex-1 px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-semibold flex items-center justify-center gap-2 shadow-md disabled:opacity-50"
             >
-              {saving ? 'Guardando...' : especialidad ? 'Actualizar' : 'Crear'}
+              {saving ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
+                  <span>Guardando...</span>
+                </>
+              ) : (
+                <span>{especialidad ? 'Actualizar' : 'Crear'}</span>
+              )}
             </button>
           </div>
-        </form>
+        </div>
       </div>
     </div>
   );

@@ -6,6 +6,8 @@ import Dashboard from './paginas/admin/Dashboard';
 import ListaUsuarios from './paginas/admin/usuarios/ListaUsuarios';
 import Empresas from './paginas/admin/empresas/index';
 import ListaEspecialidades from './paginas/admin/especialidades/ListaEspecialidades';
+import ListaOfertas from './paginas/admin/ofertas';
+
 // Componente temporal para las rutas que aún no has desarrollado
 const TempPage = ({ title }) => (
   <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -63,7 +65,7 @@ function App() {
             path="/admin/ofertas"
             element={
               <PrivateRoute roles={['administrador', 'directivo']}>
-                <TempPage title="Gestión de Ofertas" />
+                <ListaOfertas  />
               </PrivateRoute>
             }
           />
