@@ -101,6 +101,9 @@ export default function FormularioUsuario({ usuario, onClose }) {
     if (formData.tipo_usuario === 'estudiante' && espReady && !formData.id_especialidad) {
       newErrors.id_especialidad = 'La especialidad es requerida para estudiantes';
     }
+    if (formData.tipo_usuario === 'profesor' && espReady && !formData.id_especialidad) {
+      newErrors.id_especialidad = 'La especialidad es requerida para profesores';
+    }
 
     // Años de experiencia (numérico y ≥ 0)
     if (formData.tipo_usuario === 'profesor' && formData.anos_experiencia !== '') {
@@ -135,6 +138,7 @@ export default function FormularioUsuario({ usuario, onClose }) {
         dataToSend.id_especialidad = parseInt(formData.id_especialidad, 10);
         dataToSend.ano_ingreso = parseInt(formData.ano_ingreso, 10);
       } else if (formData.tipo_usuario === 'profesor') {
+        dataToSend.id_especialidad = parseInt(formData.id_especialidad, 10);
         dataToSend.titulo_profesional = (formData.titulo_profesional || '').trim();
         dataToSend.anos_experiencia = formData.anos_experiencia ? parseInt(formData.anos_experiencia, 10) : 0;
         dataToSend.codigo_profesor = formData.codigo_profesor || '';
@@ -167,7 +171,7 @@ export default function FormularioUsuario({ usuario, onClose }) {
         ...prev,
         tipo_usuario: nextType,
         // limpiar estudiante
-        id_especialidad: nextType === 'estudiante' ? prev.id_especialidad : '',
+        id_especialidad: nextType === 'estudiante' || nextType === 'profesor' ? prev.id_especialidad : '',
         ano_ingreso: nextType === 'estudiante' ? prev.ano_ingreso : new Date().getFullYear(),
         // limpiar profesor
         titulo_profesional: nextType === 'profesor' ? prev.titulo_profesional : '',
@@ -199,10 +203,11 @@ export default function FormularioUsuario({ usuario, onClose }) {
           </h2>
           <button
             onClick={() => onClose(false)}
-            className="text-white/90 hover:text-white transition-colors"
+            aria-label="Cerrar"
+            className="w-8 h-8 rounded-lg flex items-center justify-center transition-colors bg-white/20 hover:bg-white/30 focus:outline-none focus:ring-2 focus:ring-white/60 text-white"
             title="Cerrar"
           >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
@@ -426,6 +431,26 @@ export default function FormularioUsuario({ usuario, onClose }) {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Especialidad para Profesor */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Especialidad *</label>
+                  <select
+                    name="id_especialidad"
+                    value={formData.id_especialidad}
+                    onChange={handleChange}
+                    className={`w-full px-3 py-2 border-2 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${errors.id_especialidad ? 'border-red-400' : 'border-gray-300'}`}
+                  >
+                    <option value="">{espReady ? 'Seleccione una especialidad' : 'Cargando...'}</option>
+                    {especialidades.map((esp) => (
+                      <option key={esp.id_especialidad} value={String(esp.id_especialidad)}>
+                        {esp.nombre_especialidad}
+                      </option>
+                    ))}
+                  </select>
+                  {errors.id_especialidad && (
+                    <p className="mt-1 text-xs text-red-600">{errors.id_especialidad}</p>
+                  )}
+                </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Título Profesional</label>
                   <input
@@ -462,9 +487,16 @@ export default function FormularioUsuario({ usuario, onClose }) {
                     value={formData.codigo_profesor}
                     onChange={handleChange}
                     className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="Dejar vacío para autogenerar (PROF_XXX)"
+                    placeholder={
+                      formData.id_especialidad
+                        ? 'Dejar vacío para autogenerar (prefijo por especialidad)'
+                        : 'Seleccione una especialidad primero'
+                    }
                   />
-                  <p className="mt-1 text-xs text-gray-500">Si lo dejas vacío, se generará automáticamente un código como PROF_001.</p>
+                  <p className="mt-1 text-xs text-gray-500">
+                    Si lo dejas vacío, se generará automáticamente un código con el prefijo de la especialidad
+                    (por ejemplo, Agropecuaria → PROFEAGRO001, Mecánica Industrial → PROFEMECA001).
+                  </p>
                 </div>
 
                 <div>

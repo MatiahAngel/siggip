@@ -3,9 +3,17 @@ import bcrypt from 'bcryptjs';
 import Usuario from '../../modelos/Usuario.js';
 import Estudiante from '../../modelos/estudiante.js';
 import Docente from '../../modelos/docente.js';
+import Especialidad from '../../modelos/Especialidad.js';
 
 const compact = (obj) =>
   Object.fromEntries(Object.entries(obj).filter(([, v]) => v !== undefined));
+
+// Normaliza texto: a minúsculas y sin acentos/diacríticos
+const normalizeText = (s) =>
+  (s?.toString?.() || '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '');
 
 // ─────────────────────────────────────────────────────────────────────────────
 export const getAll = async (req, res) => {
@@ -95,6 +103,9 @@ export const create = async (req, res) => {
     if (tipo_usuario === 'estudiante' && !id_especialidad) {
       return res.status(400).json({ error: 'La especialidad es obligatoria para estudiantes' });
     }
+    if (tipo_usuario === 'profesor' && !id_especialidad) {
+      return res.status(400).json({ error: 'La especialidad es obligatoria para profesores' });
+    }
 
     const password_hash = await bcrypt.hash(password, 10);
 
@@ -119,15 +130,25 @@ export const create = async (req, res) => {
     } else if (tipo_usuario === 'profesor') {
       const nuevoDocente = await Docente.create({
         id_usuario: nuevoUsuario.id_usuario,
+        id_especialidad,
         titulo_profesional: titulo_profesional || '',
         anos_experiencia: Number(anos_experiencia) || 0,
         codigo_profesor: codigo_profesor || '',
         cargo: cargo || 'Profesor',
         estado_laboral: estado_laboral || 'activo', // mapea a estado_profesor
       });
-      // Si no se envió un código, autogenerar con formato PROF_XXX usando el id_profesor
+      // Si no se envió un código, autogenerar con formato según especialidad
       if (!codigo_profesor || String(codigo_profesor).trim() === '') {
-        const autocode = `PROF_${String(nuevoDocente.id_profesor).padStart(3, '0')}`;
+        let prefix = 'PROF_';
+        try {
+          const esp = await Especialidad.findByPk(id_especialidad);
+          const nameNorm = normalizeText(esp?.nombre_especialidad || '');
+          if (nameNorm.includes('agro')) prefix = 'PROFEAGRO';
+          else if (nameNorm.includes('mecan')) prefix = 'PROFEMECA';
+        } catch (_) {
+          // fallback mantiene prefix por defecto
+        }
+        const autocode = `${prefix}${String(nuevoDocente.id_profesor).padStart(3, '0')}`;
         await nuevoDocente.update({ codigo_profesor: autocode });
       }
     }
@@ -227,6 +248,7 @@ export const update = async (req, res) => {
     if (tipoActual === 'profesor') {
       const docente = await Docente.findOne({ where: { id_usuario: id } });
       const docPayload = compact({
+        id_especialidad,
         titulo_profesional: titulo_profesional?.trim(),
         anos_experiencia:
           anos_experiencia !== undefined && anos_experiencia !== null
@@ -250,7 +272,18 @@ export const update = async (req, res) => {
           (codigo_profesor === undefined || String(codigo_profesor).trim() === '') &&
           (!creado.codigo_profesor || String(creado.codigo_profesor).trim() === '')
         ) {
-          const autocode = `PROF_${String(creado.id_profesor).padStart(3, '0')}`;
+          let prefix = 'PROF_';
+          try {
+            if (id_especialidad) {
+              const esp = await Especialidad.findByPk(id_especialidad);
+              const nameNorm = normalizeText(esp?.nombre_especialidad || '');
+              if (nameNorm.includes('agro')) prefix = 'PROFEAGRO';
+              else if (nameNorm.includes('mecan')) prefix = 'PROFEMECA';
+            }
+          } catch (_) {
+            // mantener prefix por defecto
+          }
+          const autocode = `${prefix}${String(creado.id_profesor).padStart(3, '0')}`;
           await creado.update({ codigo_profesor: autocode });
         }
       }

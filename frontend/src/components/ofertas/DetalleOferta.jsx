@@ -107,9 +107,9 @@ export default function DetalleOferta({ idOferta, onClose, onEditar }) {
         <div className="relative bg-gradient-to-r from-indigo-600 to-blue-600 text-white p-6 rounded-t-xl flex-shrink-0">
           <button
             onClick={onClose}
-            className="absolute top-4 right-4 w-8 h-8 bg-white bg-opacity-20 hover:bg-opacity-30 rounded-lg flex items-center justify-center transition-colors"
+            className="absolute top-4 right-4 w-8 h-8 rounded-lg flex items-center justify-center transition-colors bg-white/20 hover:bg-white/30 focus:outline-none focus:ring-2 focus:ring-white/60"
           >
-            <span className="text-xl leading-none font-bold">✕</span>
+            <span className="text-xl leading-none font-bold text-white">✕</span>
           </button>
           
           <div className="flex items-start gap-4 pr-12">
