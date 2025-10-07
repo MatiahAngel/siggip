@@ -117,7 +117,7 @@ export const create = async (req, res) => {
         ano_ingreso: ano_ingreso || new Date().getFullYear(),
       });
     } else if (tipo_usuario === 'profesor') {
-      await Docente.create({
+      const nuevoDocente = await Docente.create({
         id_usuario: nuevoUsuario.id_usuario,
         titulo_profesional: titulo_profesional || '',
         anos_experiencia: Number(anos_experiencia) || 0,
@@ -125,6 +125,11 @@ export const create = async (req, res) => {
         cargo: cargo || 'Profesor',
         estado_laboral: estado_laboral || 'activo', // mapea a estado_profesor
       });
+      // Si no se envió un código, autogenerar con formato PROF_XXX usando el id_profesor
+      if (!codigo_profesor || String(codigo_profesor).trim() === '') {
+        const autocode = `PROF_${String(nuevoDocente.id_profesor).padStart(3, '0')}`;
+        await nuevoDocente.update({ codigo_profesor: autocode });
+      }
     }
 
     const usuarioResponse = nuevoUsuario.toJSON();
@@ -227,7 +232,11 @@ export const update = async (req, res) => {
           anos_experiencia !== undefined && anos_experiencia !== null
             ? Number(anos_experiencia)
             : undefined,
-        codigo_profesor,
+        // Solo actualizar codigo_profesor si viene un valor no vacío; evitar sobreescribir con ""
+        codigo_profesor:
+          codigo_profesor !== undefined && String(codigo_profesor).trim() !== ''
+            ? codigo_profesor
+            : undefined,
         cargo,
         estado_laboral, // mapea en el modelo
       });
@@ -235,7 +244,15 @@ export const update = async (req, res) => {
       if (docente) {
         if (Object.keys(docPayload).length) await docente.update(docPayload);
       } else if (Object.keys(docPayload).length) {
-        await Docente.create({ id_usuario: usuario.id_usuario, ...docPayload });
+        // Crear registro de docente; si no viene codigo_profesor, se autogenerará después de crear
+        const creado = await Docente.create({ id_usuario: usuario.id_usuario, ...docPayload });
+        if (
+          (codigo_profesor === undefined || String(codigo_profesor).trim() === '') &&
+          (!creado.codigo_profesor || String(creado.codigo_profesor).trim() === '')
+        ) {
+          const autocode = `PROF_${String(creado.id_profesor).padStart(3, '0')}`;
+          await creado.update({ codigo_profesor: autocode });
+        }
       }
     }
 

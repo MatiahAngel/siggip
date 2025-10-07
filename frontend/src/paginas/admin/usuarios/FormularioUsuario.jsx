@@ -462,8 +462,9 @@ export default function FormularioUsuario({ usuario, onClose }) {
                     value={formData.codigo_profesor}
                     onChange={handleChange}
                     className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="Ej: PROF-001"
+                    placeholder="Dejar vacío para autogenerar (PROF_XXX)"
                   />
+                  <p className="mt-1 text-xs text-gray-500">Si lo dejas vacío, se generará automáticamente un código como PROF_001.</p>
                 </div>
 
                 <div>
