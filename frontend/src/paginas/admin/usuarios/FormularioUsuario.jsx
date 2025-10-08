@@ -49,6 +49,30 @@ export default function FormularioUsuario({ usuario, onClose }) {
   // ==== CARGA DATOS PARA EDICIÓN ====
   useEffect(() => {
     if (usuario) {
+      // ✅ DEBUG temporal
+      console.log('🔍 Cargando datos del usuario:', {
+        tipo: usuario.tipo_usuario,
+        datosDocente: usuario.datosDocente,
+        datosEstudiante: usuario.datosEstudiante,
+        id_esp_docente: usuario.datosDocente?.id_especialidad,
+        id_esp_estudiante: usuario.datosEstudiante?.id_especialidad
+      });
+
+      // ✅ CORRECCIÓN: Buscar id_especialidad en datosEstudiante O datosDocente
+      let especialidadId = '';
+      
+      if (usuario.tipo_usuario === 'estudiante') {
+        if (usuario.datosEstudiante?.id_especialidad != null) {
+          especialidadId = String(usuario.datosEstudiante.id_especialidad);
+        }
+      } else if (usuario.tipo_usuario === 'profesor') {
+        if (usuario.datosDocente?.id_especialidad != null) {
+          especialidadId = String(usuario.datosDocente.id_especialidad);
+        }
+      }
+
+      console.log('✅ Especialidad ID final:', especialidadId);
+
       setFormData({
         nombre: usuario.nombre || '',
         apellido_paterno: usuario.apellido_paterno || '',
@@ -58,10 +82,7 @@ export default function FormularioUsuario({ usuario, onClose }) {
         telefono: usuario.telefono || '',
         tipo_usuario: usuario.tipo_usuario || 'estudiante',
         password: '',
-        id_especialidad:
-          usuario.datosEstudiante?.id_especialidad != null
-            ? String(usuario.datosEstudiante.id_especialidad)
-            : '',
+        id_especialidad: especialidadId,
         ano_ingreso: usuario.datosEstudiante?.ano_ingreso || new Date().getFullYear(),
         titulo_profesional: usuario.datosDocente?.titulo_profesional || '',
         anos_experiencia: usuario.datosDocente?.anos_experiencia ?? '',

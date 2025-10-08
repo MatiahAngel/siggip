@@ -5,7 +5,7 @@ import { useState, useEffect, useMemo } from 'react';
 import AdminLayout from '../../../components/layout/AdminLayout';
 import FormularioUsuario from './FormularioUsuario';
 import ConfirmModal from '../../../components/common/ConfirmModal';
-import { getUsuarios, deleteUsuario, updateUsuario } from '../../../servicios/api/usuariosService';
+import { getUsuarios, getUsuario, deleteUsuario, updateUsuario } from '../../../servicios/api/usuariosService';
 
 export default function ListaUsuarios() {
   // datos
@@ -15,6 +15,7 @@ export default function ListaUsuarios() {
   // carga/errores
   const [loading, setLoading] = useState(true);
   const [softLoading, setSoftLoading] = useState(true); // skeleton suave inicial
+  const [loadingUsuario, setLoadingUsuario] = useState(false); // ✅ NUEVO
   const [error, setError] = useState('');
 
   // filtros
@@ -56,12 +57,7 @@ export default function ListaUsuarios() {
     } catch (error) {
       console.error('Error al cargar usuarios:', error);
       setError('Error al cargar usuarios');
-      // fallback opcional para no dejar vacío
-      setUsuarios([
-        { id_usuario: 1, nombre: 'Admin', apellido_paterno: 'Sistema', email: 'admin@admin.cl', tipo_usuario: 'administrador', estado: 'activo' },
-        { id_usuario: 2, nombre: 'Juan', apellido_paterno: 'Pérez', email: 'juan@alumno.cl', tipo_usuario: 'estudiante', estado: 'activo' },
-        { id_usuario: 3, nombre: 'María', apellido_paterno: 'González', email: 'maria@profesor.cl', tipo_usuario: 'profesor', estado: 'inactivo' },
-      ]);
+      setUsuarios([]);
     } finally {
       setLoading(false);
       setTimeout(() => setSoftLoading(false), 250);
@@ -94,9 +90,25 @@ export default function ListaUsuarios() {
     setShowModal(true);
   };
 
-  const handleEdit = (usuario) => {
-    setSelectedUsuario(usuario);
-    setShowModal(true);
+  // ✅ CORRECCIÓN: Cargar usuario completo antes de editar
+  const handleEdit = async (usuario) => {
+    try {
+      setLoadingUsuario(true);
+      console.log('🔍 Cargando usuario completo con ID:', usuario.id_usuario);
+      
+      // Obtener usuario COMPLETO del backend (con datosDocente/datosEstudiante)
+      const usuarioCompleto = await getUsuario(usuario.id_usuario);
+      
+      console.log('✅ Usuario completo cargado:', usuarioCompleto);
+      
+      setSelectedUsuario(usuarioCompleto);
+      setShowModal(true);
+    } catch (error) {
+      console.error('❌ Error al cargar usuario:', error);
+      alert('Error al cargar los datos del usuario');
+    } finally {
+      setLoadingUsuario(false);
+    }
   };
 
   const handleDeleteClick = (usuario) => {
@@ -106,7 +118,7 @@ export default function ListaUsuarios() {
 
   const handleDeleteConfirm = async () => {
     try {
-      await deleteUsuario(deleteTarget.id_usuario); // soft delete esperado desde API
+      await deleteUsuario(deleteTarget.id_usuario);
       setShowDeleteModal(false);
       setDeleteTarget(null);
       await fetchUsuarios();
@@ -141,7 +153,6 @@ export default function ListaUsuarios() {
     if (r === 'estudiante') return 'bg-emerald-50 text-emerald-700 border border-emerald-200';
     if (r === 'empresa') return 'bg-orange-50 text-orange-700 border border-orange-200';
     return 'bg-gray-50 text-gray-700 border border-gray-200';
-    // nota: mantenemos getRoleIcon para el emoji
   };
 
   const getRoleIcon = (role) => {
@@ -313,9 +324,9 @@ export default function ListaUsuarios() {
               <p className="text-gray-400 mt-2">Ajusta los filtros o crea un nuevo usuario</p>
               <button
                 onClick={handleCreate}
-                className="mt-6 group px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-all duration-300 flex items-center space-x-3 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+                className="mt-6 inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
               >
-                <span className="text-2xl group-hover:scale-110 transition-transform">➕</span>
+                <span className="text-2xl">➕</span>
                 <span className="font-semibold">Nuevo Usuario</span>
               </button>
             </div>
@@ -386,7 +397,8 @@ export default function ListaUsuarios() {
                         <div className="flex items-center justify-end gap-2">
                           <button
                             onClick={() => handleEdit(usuario)}
-                            className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200 transform hover:scale-110"
+                            disabled={loadingUsuario}
+                            className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200 transform hover:scale-110 disabled:opacity-50 disabled:cursor-not-allowed"
                             title="Editar"
                           >
                             <span className="text-xl">✏️</span>
@@ -455,6 +467,16 @@ export default function ListaUsuarios() {
             setDeleteTarget(null);
           }}
         />
+      )}
+
+      {/* Indicador de carga al editar */}
+      {loadingUsuario && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 flex flex-col items-center gap-3">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+            <p className="text-gray-700 font-medium">Cargando datos del usuario...</p>
+          </div>
+        </div>
       )}
     </AdminLayout>
   );

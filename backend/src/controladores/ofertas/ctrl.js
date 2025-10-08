@@ -43,18 +43,52 @@ export const getOfertas = async (req, res) => {
   }
 };
 
-// 🔍 Obtener una oferta por ID
+// 🔍 Obtener una oferta por ID CON TODOS LOS DATOS DE LA EMPRESA
 export const getOfertaById = async (req, res) => {
   const { id } = req.params;
   
   try {
     const query = `
       SELECT 
-        o.*,
+        o.id_oferta,
+        o.codigo_oferta,
+        o.titulo_oferta,
+        o.descripcion,
+        o.requisitos,
+        o.duracion_horas,
+        o.horario_trabajo,
+        o.ubicacion,
+        o.modalidad_trabajo,
+        o.cupos_disponibles,
+        o.fecha_inicio,
+        o.fecha_limite_postulacion,
+        o.salario_referencial,
+        o.beneficios,
+        o.estado_oferta,
+        o.fecha_creacion,
+        -- Datos básicos de empresa
         e.razon_social AS empresa_nombre,
         e.nombre_comercial AS empresa_comercial,
+        e.rut_empresa,
+        e.giro_comercial,
+        e.sector_economico,
+        -- Ubicación de la empresa
+        e.direccion AS direccion_empresa,
+        e.comuna AS comuna_empresa,
+        e.region AS region_empresa,
+        -- Contacto de la empresa
+        e.telefono AS telefono_empresa,
+        e.email_contacto AS email_contacto_empresa,
+        e.contacto_principal,
+        e.cargo_contacto,
+        -- Otros datos de empresa
+        e.fecha_convenio,
+        e.estado_empresa,
+        -- Datos de especialidad
         esp.nombre_especialidad,
-        esp.codigo_especialidad
+        esp.codigo_especialidad,
+        -- Conteo de postulaciones
+        (SELECT COUNT(*) FROM siggip.postulaciones p WHERE p.id_oferta = o.id_oferta) AS total_postulaciones
       FROM siggip.ofertas_practica o
       INNER JOIN siggip.empresas e ON o.id_empresa = e.id_empresa
       INNER JOIN siggip.especialidades esp ON o.id_especialidad = esp.id_especialidad
@@ -246,16 +280,17 @@ export const updateOferta = async (req, res) => {
       id_especialidad,
       titulo_oferta,
       descripcion,
-      requisitos,
+      requisitos || null,
       duracion_horas,
-      horario_trabajo,
-      ubicacion,
+      horario_trabajo || null,
+      ubicacion || null,
       modalidad_trabajo,
       cupos_disponibles,
       fecha_inicio,
       fecha_limite_postulacion,
-      salario_referencial,
-      beneficios,
+      // Convertir salario_referencial: si es string vacío o null, usar null, sino el valor
+      salario_referencial === '' || salario_referencial === null || salario_referencial === undefined ? null : salario_referencial,
+      beneficios || null,
       estado_oferta || 'activa',
       id
     ];

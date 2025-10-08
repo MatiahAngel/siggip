@@ -15,10 +15,25 @@ const normalizeText = (s) =>
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '');
 
+// Función auxiliar para generar código de profesor
+const generarCodigoProfesor = async (idEspecialidad, idProfesor) => {
+  let prefix = 'PROF_';
+  try {
+    if (idEspecialidad) {
+      const esp = await Especialidad.findByPk(idEspecialidad);
+      const nameNorm = normalizeText(esp?.nombre_especialidad || '');
+      if (nameNorm.includes('agro')) prefix = 'PROFEAGRO';
+      else if (nameNorm.includes('mecan')) prefix = 'PROFEMECA';
+    }
+  } catch (_) {
+    // mantener prefix por defecto
+  }
+  return `${prefix}${String(idProfesor).padStart(3, '0')}`;
+};
+
 // ─────────────────────────────────────────────────────────────────────────────
 export const getAll = async (req, res) => {
   try {
-    // por defecto solo activos; si quieres todos, usa ?estado=todos
     const { estado } = req.query;
     const where = estado === 'todos' ? {} : { estado: 'activo' };
 
@@ -30,7 +45,6 @@ export const getAll = async (req, res) => {
 
     return res.json(usuarios);
   } catch (error) {
-    console.error('Error al obtener usuarios:', error);
     return res.status(500).json({ error: 'Error al obtener usuarios' });
   }
 };
@@ -39,11 +53,14 @@ export const getAll = async (req, res) => {
 export const getOne = async (req, res) => {
   try {
     const { id } = req.params;
+    
     const usuario = await Usuario.findByPk(id, {
       attributes: { exclude: ['password_hash'] },
     });
 
-    if (!usuario) return res.status(404).json({ error: 'Usuario no encontrado' });
+    if (!usuario) {
+      return res.status(404).json({ error: 'Usuario no encontrado' });
+    }
 
     if (usuario.tipo_usuario === 'estudiante') {
       const estudiante = await Estudiante.findOne({ where: { id_usuario: id } });
@@ -57,7 +74,6 @@ export const getOne = async (req, res) => {
 
     return res.json(usuario);
   } catch (error) {
-    console.error('Error al obtener usuario:', error);
     return res.status(500).json({ error: 'Error al obtener usuario' });
   }
 };
@@ -128,36 +144,34 @@ export const create = async (req, res) => {
         ano_ingreso: ano_ingreso || new Date().getFullYear(),
       });
     } else if (tipo_usuario === 'profesor') {
-      const nuevoDocente = await Docente.create({
+      const ultimoDocente = await Docente.findOne({
+        order: [['id_profesor', 'DESC']],
+        attributes: ['id_profesor'],
+      });
+      const proximoId = ultimoDocente ? ultimoDocente.id_profesor + 1 : 1;
+
+      let codigoFinal;
+      if (codigo_profesor && String(codigo_profesor).trim() !== '') {
+        codigoFinal = String(codigo_profesor).trim();
+      } else {
+        codigoFinal = await generarCodigoProfesor(id_especialidad, proximoId);
+      }
+
+      await Docente.create({
         id_usuario: nuevoUsuario.id_usuario,
         id_especialidad,
         titulo_profesional: titulo_profesional || '',
         anos_experiencia: Number(anos_experiencia) || 0,
-        codigo_profesor: codigo_profesor || '',
+        codigo_profesor: codigoFinal,
         cargo: cargo || 'Profesor',
-        estado_laboral: estado_laboral || 'activo', // mapea a estado_profesor
+        estado_laboral: estado_laboral || 'activo',
       });
-      // Si no se envió un código, autogenerar con formato según especialidad
-      if (!codigo_profesor || String(codigo_profesor).trim() === '') {
-        let prefix = 'PROF_';
-        try {
-          const esp = await Especialidad.findByPk(id_especialidad);
-          const nameNorm = normalizeText(esp?.nombre_especialidad || '');
-          if (nameNorm.includes('agro')) prefix = 'PROFEAGRO';
-          else if (nameNorm.includes('mecan')) prefix = 'PROFEMECA';
-        } catch (_) {
-          // fallback mantiene prefix por defecto
-        }
-        const autocode = `${prefix}${String(nuevoDocente.id_profesor).padStart(3, '0')}`;
-        await nuevoDocente.update({ codigo_profesor: autocode });
-      }
     }
 
     const usuarioResponse = nuevoUsuario.toJSON();
     delete usuarioResponse.password_hash;
     return res.status(201).json(usuarioResponse);
   } catch (error) {
-    console.error('Error al crear usuario:', error);
     return res.status(500).json({ error: 'Error al crear usuario' });
   }
 };
@@ -179,11 +193,9 @@ export const update = async (req, res) => {
       telefono,
       tipo_usuario,
       password,
-      estado, // permitir re-activar/desactivar usuario
-      // estudiante
+      estado,
       id_especialidad,
       ano_ingreso,
-      // profesor
       titulo_profesional,
       anos_experiencia,
       codigo_profesor,
@@ -247,45 +259,60 @@ export const update = async (req, res) => {
 
     if (tipoActual === 'profesor') {
       const docente = await Docente.findOne({ where: { id_usuario: id } });
-      const docPayload = compact({
-        id_especialidad,
-        titulo_profesional: titulo_profesional?.trim(),
-        anos_experiencia:
-          anos_experiencia !== undefined && anos_experiencia !== null
-            ? Number(anos_experiencia)
-            : undefined,
-        // Solo actualizar codigo_profesor si viene un valor no vacío; evitar sobreescribir con ""
-        codigo_profesor:
-          codigo_profesor !== undefined && String(codigo_profesor).trim() !== ''
-            ? codigo_profesor
-            : undefined,
-        cargo,
-        estado_laboral, // mapea en el modelo
-      });
 
       if (docente) {
-        if (Object.keys(docPayload).length) await docente.update(docPayload);
-      } else if (Object.keys(docPayload).length) {
-        // Crear registro de docente; si no viene codigo_profesor, se autogenerará después de crear
-        const creado = await Docente.create({ id_usuario: usuario.id_usuario, ...docPayload });
-        if (
-          (codigo_profesor === undefined || String(codigo_profesor).trim() === '') &&
-          (!creado.codigo_profesor || String(creado.codigo_profesor).trim() === '')
-        ) {
-          let prefix = 'PROF_';
-          try {
-            if (id_especialidad) {
-              const esp = await Especialidad.findByPk(id_especialidad);
-              const nameNorm = normalizeText(esp?.nombre_especialidad || '');
-              if (nameNorm.includes('agro')) prefix = 'PROFEAGRO';
-              else if (nameNorm.includes('mecan')) prefix = 'PROFEMECA';
-            }
-          } catch (_) {
-            // mantener prefix por defecto
-          }
-          const autocode = `${prefix}${String(creado.id_profesor).padStart(3, '0')}`;
-          await creado.update({ codigo_profesor: autocode });
+        const docPayload = compact({
+          ...(id_especialidad !== undefined ? { id_especialidad } : {}),
+          titulo_profesional: titulo_profesional?.trim(),
+          anos_experiencia:
+            anos_experiencia !== undefined && anos_experiencia !== null
+              ? Number(anos_experiencia)
+              : undefined,
+          ...(codigo_profesor && String(codigo_profesor).trim() !== ''
+            ? { codigo_profesor: String(codigo_profesor).trim() }
+            : {}),
+          cargo,
+          estado_laboral,
+        });
+
+        if (Object.keys(docPayload).length) {
+          await docente.update(docPayload);
         }
+
+        await docente.reload();
+        if (!docente.codigo_profesor || String(docente.codigo_profesor).trim() === '') {
+          const nuevoCodigo = await generarCodigoProfesor(
+            docente.id_especialidad,
+            docente.id_profesor
+          );
+          await docente.update({ codigo_profesor: nuevoCodigo });
+        }
+      } else {
+        const ultimoDocente = await Docente.findOne({
+          order: [['id_profesor', 'DESC']],
+          attributes: ['id_profesor'],
+        });
+        const proximoId = ultimoDocente ? ultimoDocente.id_profesor + 1 : 1;
+
+        let codigoFinal;
+        if (codigo_profesor && String(codigo_profesor).trim() !== '') {
+          codigoFinal = String(codigo_profesor).trim();
+        } else {
+          codigoFinal = await generarCodigoProfesor(id_especialidad, proximoId);
+        }
+
+        await Docente.create({
+          id_usuario: usuario.id_usuario,
+          id_especialidad: id_especialidad || null,
+          titulo_profesional: titulo_profesional?.trim() || '',
+          anos_experiencia:
+            anos_experiencia !== undefined && anos_experiencia !== null
+              ? Number(anos_experiencia)
+              : 0,
+          codigo_profesor: codigoFinal,
+          cargo: cargo || 'Profesor',
+          estado_laboral: estado_laboral || 'activo',
+        });
       }
     }
 
@@ -293,32 +320,27 @@ export const update = async (req, res) => {
     delete usuarioResponse.password_hash;
     return res.json(usuarioResponse);
   } catch (error) {
-    console.error('Error al actualizar usuario:', error);
     return res.status(500).json({ error: 'Error al actualizar usuario' });
   }
 };
 
-// ─────────────────────────────────────────────────────────────────────────────
 export const deleteUser = async (req, res) => {
   try {
     const { id } = req.params;
     const usuario = await Usuario.findByPk(id);
     if (!usuario) return res.status(404).json({ error: 'Usuario no encontrado' });
 
-    // soft delete del usuario
     await usuario.update({ estado: 'inactivo' });
 
-    // si es profesor, inactiva también su registro en profesores
     if (usuario.tipo_usuario === 'profesor') {
       await Docente.update(
-        { estado_laboral: 'inactivo' }, // mapea a estado_profesor
+        { estado_laboral: 'inactivo' },
         { where: { id_usuario: id } }
       );
     }
 
     return res.json({ message: 'Usuario eliminado correctamente' });
   } catch (error) {
-    console.error('Error al eliminar usuario:', error);
     return res.status(500).json({ error: 'Error al eliminar usuario' });
   }
 };

@@ -1,5 +1,5 @@
 // 📁 UBICACIÓN: frontend/src/components/ofertas/DetalleOferta.jsx
-// 🎯 Vista detallada de una oferta de práctica - VERSIÓN CON MEJOR CONTRASTE
+// 🎯 Vista detallada de una oferta de práctica - CON MÁS DATOS DE EMPRESA
 
 import { useState, useEffect } from 'react';
 import { getOfertaById } from '../../servicios/api/ofertasService';
@@ -181,6 +181,33 @@ export default function DetalleOferta({ idOferta, onClose, onEditar }) {
             </div>
           </section>
 
+          {/* REQUISITOS DESTACADOS */}
+          {oferta.requisitos && (
+            <section className="mb-6">
+              <div className="flex items-center gap-2 mb-3">
+                <div className="w-10 h-10 bg-red-600 rounded-lg flex items-center justify-center">
+                  <span className="text-xl">⚠️</span>
+                </div>
+                <h2 className="text-lg font-bold text-gray-900">Requisitos Importantes</h2>
+              </div>
+              <div className="bg-gradient-to-br from-red-50 to-orange-50 border-2 border-red-400 rounded-lg p-4 shadow-md">
+                <div className="flex items-start gap-3 mb-3">
+                  <div className="w-7 h-7 bg-red-600 rounded-full flex items-center justify-center flex-shrink-0">
+                    <span className="text-white font-bold">!</span>
+                  </div>
+                  <p className="text-xs text-red-800 font-bold uppercase">
+                    Asegúrate de cumplir con todos estos requisitos antes de postular
+                  </p>
+                </div>
+                <div className="bg-white rounded-lg p-4 border-2 border-red-300">
+                  <p className="text-gray-800 whitespace-pre-wrap text-sm leading-relaxed font-medium">
+                    {oferta.requisitos}
+                  </p>
+                </div>
+              </div>
+            </section>
+          )}
+
           {/* Detalles */}
           <section className="mb-6">
             <div className="flex items-center gap-2 mb-3">
@@ -258,23 +285,6 @@ export default function DetalleOferta({ idOferta, onClose, onEditar }) {
             </div>
           </section>
 
-          {/* Requisitos */}
-          {oferta.requisitos && (
-            <section className="mb-6">
-              <div className="flex items-center gap-2 mb-3">
-                <div className="w-10 h-10 bg-emerald-600 rounded-lg flex items-center justify-center">
-                  <span className="text-xl">✅</span>
-                </div>
-                <h2 className="text-lg font-bold text-gray-900">Requisitos</h2>
-              </div>
-              <div className="bg-white border-2 border-emerald-300 rounded-lg p-4 shadow-sm">
-                <p className="text-gray-700 whitespace-pre-wrap text-sm leading-relaxed">
-                  {oferta.requisitos}
-                </p>
-              </div>
-            </section>
-          )}
-
           {/* Beneficios */}
           {oferta.beneficios && (
             <section className="mb-6">
@@ -292,27 +302,119 @@ export default function DetalleOferta({ idOferta, onClose, onEditar }) {
             </section>
           )}
 
-          {/* Empresa */}
-          <section>
+          {/* INFORMACIÓN COMPLETA DE LA EMPRESA */}
+          <section className="mb-4">
             <div className="flex items-center gap-2 mb-3">
-              <div className="w-10 h-10 bg-slate-600 rounded-lg flex items-center justify-center">
+              <div className="w-10 h-10 bg-blue-700 rounded-lg flex items-center justify-center">
                 <span className="text-xl">🏢</span>
               </div>
-              <h2 className="text-lg font-bold text-gray-900">Sobre la empresa</h2>
+              <h2 className="text-lg font-bold text-gray-900">Información de la Empresa</h2>
             </div>
-            <div className="bg-white border-2 border-gray-300 rounded-lg p-4 shadow-sm">
-              <div className="space-y-2 text-sm">
-                <div>
-                  <span className="font-bold text-gray-700">Razón Social: </span>
-                  <span className="text-gray-900">{oferta.empresa_nombre}</span>
-                </div>
-                {oferta.empresa_comercial && (
+            
+            <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-300 rounded-lg p-5 shadow-md">
+              {/* Datos principales */}
+              <div className="bg-white rounded-lg p-4 mb-3 border-2 border-blue-200">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <span className="font-bold text-gray-700">Nombre Comercial: </span>
-                    <span className="text-gray-900">{oferta.empresa_comercial}</span>
+                    <p className="text-xs text-gray-600 font-bold uppercase mb-1">Razón Social</p>
+                    <p className="text-gray-900 font-bold text-sm">{oferta.empresa_nombre}</p>
                   </div>
-                )}
+                  
+                  {oferta.empresa_comercial && (
+                    <div>
+                      <p className="text-xs text-gray-600 font-bold uppercase mb-1">Nombre Comercial</p>
+                      <p className="text-gray-900 font-bold text-sm">{oferta.empresa_comercial}</p>
+                    </div>
+                  )}
+                  
+                  {oferta.rut_empresa && (
+                    <div>
+                      <p className="text-xs text-gray-600 font-bold uppercase mb-1">RUT</p>
+                      <p className="text-gray-900 font-semibold text-sm">{oferta.rut_empresa}</p>
+                    </div>
+                  )}
+                  
+                  {oferta.giro_comercial && (
+                    <div>
+                      <p className="text-xs text-gray-600 font-bold uppercase mb-1">Giro Comercial</p>
+                      <p className="text-gray-900 font-semibold text-sm">{oferta.giro_comercial}</p>
+                    </div>
+                  )}
+                  
+                  {oferta.sector_economico && (
+                    <div>
+                      <p className="text-xs text-gray-600 font-bold uppercase mb-1">Sector Económico</p>
+                      <p className="text-gray-900 font-semibold text-sm">{oferta.sector_economico}</p>
+                    </div>
+                  )}
+                </div>
               </div>
+
+              {/* Ubicación de la empresa */}
+              {(oferta.direccion_empresa || oferta.comuna_empresa || oferta.region_empresa) && (
+                <div className="bg-white rounded-lg p-4 mb-3 border-2 border-blue-200">
+                  <div className="flex items-center gap-2 mb-3">
+                    <span className="text-lg">📍</span>
+                    <p className="text-sm font-bold text-gray-800">Ubicación de la Empresa</p>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {oferta.direccion_empresa && (
+                      <div>
+                        <p className="text-xs text-gray-600 font-bold uppercase mb-1">Dirección</p>
+                        <p className="text-gray-900 text-sm font-medium">{oferta.direccion_empresa}</p>
+                      </div>
+                    )}
+                    {oferta.comuna_empresa && (
+                      <div>
+                        <p className="text-xs text-gray-600 font-bold uppercase mb-1">Comuna</p>
+                        <p className="text-gray-900 text-sm font-medium">{oferta.comuna_empresa}</p>
+                      </div>
+                    )}
+                    {oferta.region_empresa && (
+                      <div>
+                        <p className="text-xs text-gray-600 font-bold uppercase mb-1">Región</p>
+                        <p className="text-gray-900 text-sm font-medium">{oferta.region_empresa}</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Contacto de la empresa */}
+              {(oferta.telefono_empresa || oferta.email_contacto_empresa || oferta.contacto_principal || oferta.cargo_contacto) && (
+                <div className="bg-white rounded-lg p-4 border-2 border-blue-200">
+                  <div className="flex items-center gap-2 mb-3">
+                    <span className="text-lg">📞</span>
+                    <p className="text-sm font-bold text-gray-800">Información de Contacto</p>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {oferta.contacto_principal && (
+                      <div>
+                        <p className="text-xs text-gray-600 font-bold uppercase mb-1">Contacto Principal</p>
+                        <p className="text-gray-900 text-sm font-bold">{oferta.contacto_principal}</p>
+                      </div>
+                    )}
+                    {oferta.cargo_contacto && (
+                      <div>
+                        <p className="text-xs text-gray-600 font-bold uppercase mb-1">Cargo</p>
+                        <p className="text-gray-900 text-sm font-medium">{oferta.cargo_contacto}</p>
+                      </div>
+                    )}
+                    {oferta.telefono_empresa && (
+                      <div>
+                        <p className="text-xs text-gray-600 font-bold uppercase mb-1">Teléfono</p>
+                        <p className="text-gray-900 text-sm font-bold">{oferta.telefono_empresa}</p>
+                      </div>
+                    )}
+                    {oferta.email_contacto_empresa && (
+                      <div>
+                        <p className="text-xs text-gray-600 font-bold uppercase mb-1">Email</p>
+                        <p className="text-blue-600 text-sm font-bold">{oferta.email_contacto_empresa}</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           </section>
         </div>
