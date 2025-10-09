@@ -1,5 +1,5 @@
 // 📁 frontend/src/paginas/admin/especialidades/FormularioEspecialidad.jsx
-// 🎨 Formulario de Especialidad — ESTILO ALTO CONTRASTE (coherente con ofertas)
+// 🎨 Formulario de Especialidad — TEMA GRIS PROFESIONAL
 
 import { useEffect, useState } from 'react';
 import { createEspecialidad, updateEspecialidad } from '../../../servicios/api/especialidadesService';
@@ -12,18 +12,18 @@ export default function FormularioEspecialidad({ especialidad, onClose, onSaved 
     duracion_practica_min: '',
     duracion_practica_max: '',
     sector_economico: '',
-    estado: 'activo', // valores reales en BD: 'activo' | 'inactivo'
+    estado: 'activo',
   });
   const [errors, setErrors] = useState({});
   const [saving, setSaving] = useState(false);
 
-  // helpers visuales (match con ofertas)
   const getEstadoBadge = (estado) => {
     const st = (estado || '').toLowerCase();
-    if (st === 'activo') return 'bg-emerald-500 text-white';
-    if (st === 'inactivo') return 'bg-slate-500 text-white';
-    return 'bg-slate-500 text-white';
+    if (st === 'activo') return 'bg-emerald-600 text-white';
+    if (st === 'inactivo') return 'bg-gray-600 text-white';
+    return 'bg-gray-600 text-white';
   };
+  
   const getEstadoIcon = (estado) => ((estado || '').toLowerCase() === 'activo' ? '✅' : '⏸️');
 
   useEffect(() => {
@@ -48,7 +48,6 @@ export default function FormularioEspecialidad({ especialidad, onClose, onSaved 
     const val = numeric.includes(name) ? normalizeNumber(value) : value;
     setForm((prev) => ({ ...prev, [name]: val }));
     if (errors[name]) setErrors((prev) => ({ ...prev, [name]: '' }));
-    // validación en vivo cuando cambian mínimos/máximos
     if (name === 'duracion_practica_min' || name === 'duracion_practica_max') {
       validate({ ...form, [name]: val });
     }
@@ -60,7 +59,6 @@ export default function FormularioEspecialidad({ especialidad, onClose, onSaved 
       errs.nombre_especialidad = 'El nombre de la especialidad es obligatorio';
     }
 
-    // números
     const min = Number(data.duracion_practica_min);
     const max = Number(data.duracion_practica_max);
     if (data.duracion_practica_min !== '' && Number.isNaN(min)) errs.duracion_practica_min = 'Debe ser un número';
@@ -99,7 +97,6 @@ export default function FormularioEspecialidad({ especialidad, onClose, onSaved 
     }
   };
 
-  // preview rápido de rango
   const rangoTexto = (() => {
     const min = form.duracion_practica_min === '' ? null : Number(form.duracion_practica_min);
     const max = form.duracion_practica_max === '' ? null : Number(form.duracion_practica_max);
@@ -112,8 +109,8 @@ export default function FormularioEspecialidad({ especialidad, onClose, onSaved 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-xl shadow-2xl max-w-3xl w-full max-h-[92vh] flex flex-col overflow-hidden">
-        {/* Header degradado fijo (coherente con ofertas) */}
-        <div className="relative bg-gradient-to-r from-indigo-600 to-blue-600 text-white p-6 rounded-t-xl flex-shrink-0">
+        {/* Header gris profesional */}
+        <div className="relative bg-gradient-to-r from-gray-800 to-gray-900 text-white p-6 rounded-t-xl flex-shrink-0">
           <button
             onClick={onClose}
             className="absolute top-4 right-4 w-8 h-8 bg-white/20 hover:bg-white/30 rounded-lg flex items-center justify-center transition-colors"
@@ -135,11 +132,11 @@ export default function FormularioEspecialidad({ especialidad, onClose, onSaved 
                     <span className="capitalize">{(form.estado || '').toLowerCase()}</span>
                   </span>
                 ) : (
-                  <span className="px-3 py-1.5 bg-white text-indigo-700 rounded-lg text-xs font-bold shadow-md">
+                  <span className="px-3 py-1.5 bg-white text-gray-800 rounded-lg text-xs font-bold shadow-md">
                     Nueva Especialidad
                   </span>
                 )}
-                <span className="px-3 py-1.5 bg-white text-indigo-700 rounded-lg text-xs font-bold shadow-md">
+                <span className="px-3 py-1.5 bg-white text-gray-800 rounded-lg text-xs font-bold shadow-md">
                   {form.codigo_especialidad?.trim() ? `Código: ${form.codigo_especialidad}` : 'Sin código'}
                 </span>
               </div>
@@ -147,7 +144,7 @@ export default function FormularioEspecialidad({ especialidad, onClose, onSaved 
               <h1 className="text-2xl font-bold mb-1 break-words">
                 {form.nombre_especialidad?.trim() || (especialidad ? 'Editar Especialidad' : 'Crear Especialidad')}
               </h1>
-              <p className="text-blue-100 text-sm flex items-center gap-1.5">
+              <p className="text-gray-300 text-sm flex items-center gap-1.5">
                 <span>⏱️</span>
                 <span>Rango de práctica: {rangoTexto}</span>
               </p>
@@ -159,7 +156,7 @@ export default function FormularioEspecialidad({ especialidad, onClose, onSaved 
         <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 bg-gray-50">
           {/* Stats rápidos */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-            <div className="bg-white p-4 rounded-lg border-2 border-blue-200 shadow-sm">
+            <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
               <div className="flex items-center gap-2 mb-2">
                 <span className="text-2xl">🏷️</span>
                 <span className="text-xs text-gray-600 font-semibold uppercase">Código</span>
@@ -167,7 +164,7 @@ export default function FormularioEspecialidad({ especialidad, onClose, onSaved 
               <p className="font-bold text-gray-900 text-lg">{form.codigo_especialidad || '—'}</p>
             </div>
 
-            <div className="bg-white p-4 rounded-lg border-2 border-purple-200 shadow-sm">
+            <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
               <div className="flex items-center gap-2 mb-2">
                 <span className="text-2xl">⏰</span>
                 <span className="text-xs text-gray-600 font-semibold uppercase">Duración mín.</span>
@@ -177,7 +174,7 @@ export default function FormularioEspecialidad({ especialidad, onClose, onSaved 
               </p>
             </div>
 
-            <div className="bg-white p-4 rounded-lg border-2 border-emerald-200 shadow-sm">
+            <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
               <div className="flex items-center gap-2 mb-2">
                 <span className="text-2xl">🕐</span>
                 <span className="text-xs text-gray-600 font-semibold uppercase">Duración máx.</span>
@@ -190,28 +187,26 @@ export default function FormularioEspecialidad({ especialidad, onClose, onSaved 
 
           {/* Sección Información principal */}
           <section className="mb-6">
-            <div className="flex items-center gap-2 mb-3">
-              <div className="w-10 h-10 bg-indigo-600 rounded-lg flex items-center justify-center">
-                <span className="text-xl">📋</span>
+            <div className="flex items-center gap-2 mb-4">
+              <div className="w-10 h-10 bg-gray-700 rounded-lg flex items-center justify-center">
+                <span className="text-lg text-white">📋</span>
               </div>
               <h2 className="text-lg font-bold text-gray-900">Información principal</h2>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Código */}
-              <div className="p-4 bg-white rounded-lg border-2 border-gray-300 shadow-sm">
+              <div className="p-4 bg-white rounded-lg border border-gray-300">
                 <label className="block text-xs text-gray-600 font-semibold uppercase mb-2">Código</label>
                 <input
                   name="codigo_especialidad"
                   value={form.codigo_especialidad}
                   onChange={handleChange}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-gray-500"
                   placeholder="MECA, AGRO, etc."
                 />
               </div>
 
-              {/* Nombre */}
-              <div className={`p-4 bg-white rounded-lg border-2 ${errors.nombre_especialidad ? 'border-red-400' : 'border-gray-300'} shadow-sm`}>
+              <div className={`p-4 bg-white rounded-lg border ${errors.nombre_especialidad ? 'border-red-400' : 'border-gray-300'}`}>
                 <label className="block text-xs text-gray-600 font-semibold uppercase mb-2">
                   Nombre <span className="text-red-500">*</span>
                 </label>
@@ -219,7 +214,7 @@ export default function FormularioEspecialidad({ especialidad, onClose, onSaved 
                   name="nombre_especialidad"
                   value={form.nombre_especialidad}
                   onChange={handleChange}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-gray-500"
                   placeholder="Mecánica Industrial"
                 />
                 {errors.nombre_especialidad && (
@@ -227,15 +222,14 @@ export default function FormularioEspecialidad({ especialidad, onClose, onSaved 
                 )}
               </div>
 
-              {/* Descripción */}
-              <div className="md:col-span-2 p-4 bg-white rounded-lg border-2 border-gray-300 shadow-sm">
+              <div className="md:col-span-2 p-4 bg-white rounded-lg border border-gray-300">
                 <label className="block text-xs text-gray-600 font-semibold uppercase mb-2">Descripción</label>
                 <textarea
                   name="descripcion"
                   value={form.descripcion}
                   onChange={handleChange}
                   rows={3}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-gray-500"
                   placeholder="Descripción breve de la especialidad"
                 />
               </div>
@@ -244,17 +238,16 @@ export default function FormularioEspecialidad({ especialidad, onClose, onSaved 
 
           {/* Sección Detalles */}
           <section className="mb-2">
-            <div className="flex items-center gap-2 mb-3">
-              <div className="w-10 h-10 bg-indigo-600 rounded-lg flex items-center justify-center">
-                <span className="text-xl">⚙️</span>
+            <div className="flex items-center gap-2 mb-4">
+              <div className="w-10 h-10 bg-gray-700 rounded-lg flex items-center justify-center">
+                <span className="text-lg text-white">⚙️</span>
               </div>
               <h2 className="text-lg font-bold text-gray-900">Detalles de práctica</h2>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Duración min */}
-              <div className={`flex items-center gap-3 p-4 bg-white rounded-lg border-2 ${errors.duracion_practica_min ? 'border-red-400' : 'border-gray-300'} shadow-sm`}>
-                <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center flex-shrink-0">
+              <div className={`flex items-center gap-3 p-4 bg-white rounded-lg border ${errors.duracion_practica_min ? 'border-red-400' : 'border-gray-300'}`}>
+                <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0">
                   <span className="text-2xl">⏰</span>
                 </div>
                 <div className="min-w-0 flex-1">
@@ -265,7 +258,7 @@ export default function FormularioEspecialidad({ especialidad, onClose, onSaved 
                     value={form.duracion_practica_min}
                     onChange={handleChange}
                     min="0"
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500"
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-gray-500"
                     placeholder="360"
                   />
                   {errors.duracion_practica_min && (
@@ -274,9 +267,8 @@ export default function FormularioEspecialidad({ especialidad, onClose, onSaved 
                 </div>
               </div>
 
-              {/* Duración max */}
-              <div className={`flex items-center gap-3 p-4 bg-white rounded-lg border-2 ${errors.duracion_practica_max ? 'border-red-400' : 'border-gray-300'} shadow-sm`}>
-                <div className="w-12 h-12 bg-emerald-100 rounded-lg flex items-center justify-center flex-shrink-0">
+              <div className={`flex items-center gap-3 p-4 bg-white rounded-lg border ${errors.duracion_practica_max ? 'border-red-400' : 'border-gray-300'}`}>
+                <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0">
                   <span className="text-2xl">🕐</span>
                 </div>
                 <div className="min-w-0 flex-1">
@@ -287,7 +279,7 @@ export default function FormularioEspecialidad({ especialidad, onClose, onSaved 
                     value={form.duracion_practica_max}
                     onChange={handleChange}
                     min="0"
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500"
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-gray-500"
                     placeholder="540"
                   />
                   {errors.duracion_practica_max && (
@@ -296,9 +288,8 @@ export default function FormularioEspecialidad({ especialidad, onClose, onSaved 
                 </div>
               </div>
 
-              {/* Sector económico */}
-              <div className="flex items-center gap-3 p-4 bg-white rounded-lg border-2 border-gray-300 shadow-sm md:col-span-2">
-                <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
+              <div className="flex items-center gap-3 p-4 bg-white rounded-lg border border-gray-300 md:col-span-2">
+                <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0">
                   <span className="text-2xl">🏭</span>
                 </div>
                 <div className="min-w-0 flex-1">
@@ -307,16 +298,15 @@ export default function FormularioEspecialidad({ especialidad, onClose, onSaved 
                     name="sector_economico"
                     value={form.sector_economico}
                     onChange={handleChange}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500"
-                    placeholder="Metalmecánico, Agrícola…"
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-gray-500"
+                    placeholder="Metalmecánico, Agrícola..."
                   />
                 </div>
               </div>
 
-              {/* Estado (solo al editar) */}
               {especialidad && (
-                <div className="flex items-center gap-3 p-4 bg-white rounded-lg border-2 border-gray-300 shadow-sm">
-                  <div className="w-12 h-12 bg-slate-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                <div className="flex items-center gap-3 p-4 bg-white rounded-lg border border-gray-300">
+                  <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0">
                     <span className="text-2xl">{getEstadoIcon(form.estado)}</span>
                   </div>
                   <div className="min-w-0 flex-1">
@@ -325,7 +315,7 @@ export default function FormularioEspecialidad({ especialidad, onClose, onSaved 
                       name="estado"
                       value={form.estado}
                       onChange={handleChange}
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500"
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-gray-500"
                     >
                       <option value="activo">Activo</option>
                       <option value="inactivo">Inactivo</option>
@@ -337,26 +327,25 @@ export default function FormularioEspecialidad({ especialidad, onClose, onSaved 
           </section>
         </form>
 
-        {/* Footer fijo con acciones */}
-        <div className="border-t-2 bg-white px-6 py-4 rounded-b-xl flex-shrink-0">
+        {/* Footer */}
+        <div className="border-t bg-white px-6 py-4 rounded-b-xl flex-shrink-0">
           <div className="flex flex-col sm:flex-row gap-3">
             <button
               type="button"
               onClick={onClose}
               disabled={saving}
-              className="flex-1 px-4 py-2.5 border-2 border-gray-400 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors font-semibold disabled:opacity-50"
+              className="flex-1 px-4 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-semibold disabled:opacity-50"
             >
               Cancelar
             </button>
             <button
               type="submit"
               onClick={(e) => {
-                // dispara el submit del form anterior
                 const formEl = e.currentTarget.closest('div').parentElement.previousElementSibling;
                 formEl?.requestSubmit?.();
               }}
               disabled={saving}
-              className="flex-1 px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-semibold flex items-center justify-center gap-2 shadow-md disabled:opacity-50"
+              className="flex-1 px-4 py-2.5 bg-gray-800 text-white rounded-lg hover:bg-gray-900 transition-colors font-semibold flex items-center justify-center gap-2 shadow-md disabled:opacity-50"
             >
               {saving ? (
                 <>

@@ -1,5 +1,5 @@
 // 📁 frontend/src/componentes/Empresas/FormularioEmpresa.jsx
-// 🎨 Formulario de Empresa — ESTILO ALTO CONTRASTE (coherente con Ofertas/Especialidades)
+// 🎨 Formulario de Empresa — TEMA GRIS PROFESIONAL
 
 import { useState, useEffect } from 'react';
 import { createEmpresa, updateEmpresa } from '../../servicios/api/empresasService';
@@ -20,7 +20,6 @@ const FormularioEmpresa = ({ empresa, onClose, onGuardar }) => {
     cargo_contacto: '',
     fecha_convenio: '',
     estado_empresa: 'activa',
-    // crear usuario (solo creación)
     crear_usuario: true,
     password_usuario: '',
   });
@@ -51,20 +50,20 @@ const FormularioEmpresa = ({ empresa, onClose, onGuardar }) => {
         cargo_contacto:     empresa.cargo_contacto || '',
         fecha_convenio:     empresa.fecha_convenio ? String(empresa.fecha_convenio).slice(0,10) : '',
         estado_empresa:     empresa.estado_empresa || 'activa',
-        crear_usuario:      false, // no crear usuario al editar
+        crear_usuario:      false,
         password_usuario:   '',
       });
     }
   }, [empresa]);
 
-  // === helpers UI ===
   const getEstadoBadge = (estado) => {
     const st = (estado || '').toLowerCase();
-    if (st === 'activa') return 'bg-emerald-500 text-white';
-    if (st === 'inactiva') return 'bg-slate-500 text-white';
-    if (st === 'suspendida') return 'bg-red-500 text-white';
-    return 'bg-slate-500 text-white';
+    if (st === 'activa') return 'bg-emerald-600 text-white';
+    if (st === 'inactiva') return 'bg-gray-600 text-white';
+    if (st === 'suspendida') return 'bg-red-600 text-white';
+    return 'bg-gray-600 text-white';
   };
+  
   const getEstadoIcon = (estado) => {
     const st = (estado || '').toLowerCase();
     if (st === 'activa') return '✅';
@@ -93,7 +92,6 @@ const FormularioEmpresa = ({ empresa, onClose, onGuardar }) => {
       newErrors.email_contacto = 'Email inválido';
     }
 
-    // Si creamos usuario al crear empresa, obligamos email + contacto
     if (!empresa && formData.crear_usuario) {
       if (!formData.email_contacto) newErrors.email_contacto = 'Email es obligatorio para crear usuario';
       if (!formData.contacto_principal) newErrors.contacto_principal = 'Nombre del contacto es obligatorio para crear usuario';
@@ -111,7 +109,6 @@ const FormularioEmpresa = ({ empresa, onClose, onGuardar }) => {
     try {
       const payload = { ...formData };
 
-      // limpiar opcionales vacíos
       if (!payload.sector_economico) payload.sector_economico = null;
       if (!payload.giro_comercial) payload.giro_comercial = null;
       if (!payload.contacto_principal) payload.contacto_principal = null;
@@ -136,8 +133,8 @@ const FormularioEmpresa = ({ empresa, onClose, onGuardar }) => {
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[92vh] flex flex-col overflow-hidden">
-        {/* Header degradado fijo */}
-        <div className="relative bg-gradient-to-r from-indigo-600 to-blue-600 text-white p-6 rounded-t-xl flex-shrink-0">
+        {/* Header gris profesional */}
+        <div className="relative bg-gradient-to-r from-gray-800 to-gray-900 text-white p-6 rounded-t-xl flex-shrink-0">
           <button
             onClick={onClose}
             className="absolute top-4 right-4 w-8 h-8 bg-white/20 hover:bg-white/30 rounded-lg flex items-center justify-center transition-colors"
@@ -159,11 +156,11 @@ const FormularioEmpresa = ({ empresa, onClose, onGuardar }) => {
                     <span className="capitalize">{(formData.estado_empresa || '').toLowerCase()}</span>
                   </span>
                 ) : (
-                  <span className="px-3 py-1.5 bg-white text-indigo-700 rounded-lg text-xs font-bold shadow-md">
+                  <span className="px-3 py-1.5 bg-white text-gray-800 rounded-lg text-xs font-bold shadow-md">
                     Nueva Empresa
                   </span>
                 )}
-                <span className="px-3 py-1.5 bg-white text-indigo-700 rounded-lg text-xs font-bold shadow-md">
+                <span className="px-3 py-1.5 bg-white text-gray-800 rounded-lg text-xs font-bold shadow-md">
                   {formData.rut_empresa?.trim() ? `RUT: ${formData.rut_empresa}` : 'Sin RUT'}
                 </span>
               </div>
@@ -171,7 +168,7 @@ const FormularioEmpresa = ({ empresa, onClose, onGuardar }) => {
               <h1 className="text-2xl font-bold mb-1 break-words">
                 {formData.razon_social?.trim() || (empresa ? 'Editar Empresa' : 'Crear Empresa')}
               </h1>
-              <p className="text-blue-100 text-sm flex items-center gap-1.5">
+              <p className="text-gray-300 text-sm flex items-center gap-1.5">
                 <span>📅</span>
                 <span>Convenio: {formData.fecha_convenio || '—'}</span>
               </p>
@@ -183,41 +180,40 @@ const FormularioEmpresa = ({ empresa, onClose, onGuardar }) => {
         <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 bg-gray-50">
           {/* Stats rápidos */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-            <div className="bg-white p-4 rounded-lg border-2 border-blue-200 shadow-sm">
+            <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
               <div className="flex items-center gap-2 mb-2">
                 <span className="text-2xl">🏷️</span>
                 <span className="text-xs text-gray-600 font-semibold uppercase">RUT</span>
               </div>
               <p className="font-bold text-gray-900 text-lg">{formData.rut_empresa || '—'}</p>
             </div>
-            <div className="bg-white p-4 rounded-lg border-2 border-purple-200 shadow-sm">
+            <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
               <div className="flex items-center gap-2 mb-2">
                 <span className="text-2xl">🏠</span>
                 <span className="text-xs text-gray-600 font-semibold uppercase">Comuna</span>
               </div>
               <p className="font-bold text-gray-900 text-lg">{formData.comuna || '—'}</p>
             </div>
-            <div className="bg-white p-4 rounded-lg border-2 border-emerald-200 shadow-sm">
+            <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
               <div className="flex items-center gap-2 mb-2">
                 <span className="text-2xl">📧</span>
-                <span className="text-xs text-gray-600 font-semibold uppercase">Email contacto</span>
+                <span className="text-xs text-gray-600 font-semibold uppercase">Email</span>
               </div>
-              <p className="font-bold text-gray-900 text-lg">{formData.email_contacto || '—'}</p>
+              <p className="font-bold text-gray-900 text-lg truncate">{formData.email_contacto || '—'}</p>
             </div>
           </div>
 
           {/* Sección: Información de la Empresa */}
           <section className="mb-6">
-            <div className="flex items-center gap-2 mb-3">
-              <div className="w-10 h-10 bg-indigo-600 rounded-lg flex items-center justify-center">
-                <span className="text-xl">📋</span>
+            <div className="flex items-center gap-2 mb-4">
+              <div className="w-10 h-10 bg-gray-700 rounded-lg flex items-center justify-center">
+                <span className="text-lg text-white">📋</span>
               </div>
               <h2 className="text-lg font-bold text-gray-900">Información de la Empresa</h2>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* RUT */}
-              <div className={`p-4 bg-white rounded-lg border-2 ${errors.rut_empresa ? 'border-red-400' : 'border-gray-300'} shadow-sm`}>
+              <div className={`p-4 bg-white rounded-lg border ${errors.rut_empresa ? 'border-red-400' : 'border-gray-300'}`}>
                 <label className="block text-xs text-gray-600 font-semibold uppercase mb-2">RUT Empresa *</label>
                 <input
                   type="text"
@@ -225,92 +221,85 @@ const FormularioEmpresa = ({ empresa, onClose, onGuardar }) => {
                   value={formData.rut_empresa}
                   onChange={handleChange}
                   placeholder="12345678-9"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-500"
                 />
                 {errors.rut_empresa && <p className="text-red-500 text-xs mt-1">{errors.rut_empresa}</p>}
               </div>
 
-              {/* Razón social */}
-              <div className={`p-4 bg-white rounded-lg border-2 ${errors.razon_social ? 'border-red-400' : 'border-gray-300'} shadow-sm`}>
+              <div className={`p-4 bg-white rounded-lg border ${errors.razon_social ? 'border-red-400' : 'border-gray-300'}`}>
                 <label className="block text-xs text-gray-600 font-semibold uppercase mb-2">Razón Social *</label>
                 <input
                   type="text"
                   name="razon_social"
                   value={formData.razon_social}
                   onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-500"
                 />
                 {errors.razon_social && <p className="text-red-500 text-xs mt-1">{errors.razon_social}</p>}
               </div>
 
-              {/* Nombre comercial */}
-              <div className="p-4 bg-white rounded-lg border-2 border-gray-300 shadow-sm">
+              <div className="p-4 bg-white rounded-lg border border-gray-300">
                 <label className="block text-xs text-gray-600 font-semibold uppercase mb-2">Nombre Comercial</label>
                 <input
                   type="text"
                   name="nombre_comercial"
                   value={formData.nombre_comercial}
                   onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-500"
                 />
               </div>
 
-              {/* Giro */}
-              <div className="p-4 bg-white rounded-lg border-2 border-gray-300 shadow-sm">
+              <div className="p-4 bg-white rounded-lg border border-gray-300">
                 <label className="block text-xs text-gray-600 font-semibold uppercase mb-2">Giro Comercial</label>
                 <input
                   type="text"
                   name="giro_comercial"
                   value={formData.giro_comercial}
                   onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-500"
                 />
               </div>
 
-              {/* Sector */}
-              <div className="p-4 bg-white rounded-lg border-2 border-gray-300 shadow-sm">
+              <div className="p-4 bg-white rounded-lg border border-gray-300">
                 <label className="block text-xs text-gray-600 font-semibold uppercase mb-2">Sector Económico</label>
                 <input
                   type="text"
                   name="sector_economico"
                   value={formData.sector_economico}
                   onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-500"
                 />
               </div>
 
-              {/* Dirección */}
-              <div className="md:col-span-2 p-4 bg-white rounded-lg border-2 border-gray-300 shadow-sm">
+              <div className="md:col-span-2 p-4 bg-white rounded-lg border border-gray-300">
                 <label className="block text-xs text-gray-600 font-semibold uppercase mb-2">Dirección</label>
                 <input
                   type="text"
                   name="direccion"
                   value={formData.direccion}
                   onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-500"
                 />
               </div>
 
-              {/* Comuna */}
-              <div className="p-4 bg-white rounded-lg border-2 border-gray-300 shadow-sm">
+              <div className="p-4 bg-white rounded-lg border border-gray-300">
                 <label className="block text-xs text-gray-600 font-semibold uppercase mb-2">Comuna</label>
                 <input
                   type="text"
                   name="comuna"
                   value={formData.comuna}
                   onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-500"
                 />
               </div>
 
-              {/* Región */}
-              <div className="p-4 bg-white rounded-lg border-2 border-gray-300 shadow-sm">
+              <div className="p-4 bg-white rounded-lg border border-gray-300">
                 <label className="block text-xs text-gray-600 font-semibold uppercase mb-2">Región</label>
                 <select
                   name="region"
                   value={formData.region}
                   onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-500"
                 >
                   <option value="">Seleccione región</option>
                   {regiones.map((r) => (
@@ -319,8 +308,7 @@ const FormularioEmpresa = ({ empresa, onClose, onGuardar }) => {
                 </select>
               </div>
 
-              {/* Teléfono */}
-              <div className="p-4 bg-white rounded-lg border-2 border-gray-300 shadow-sm">
+              <div className="p-4 bg-white rounded-lg border border-gray-300">
                 <label className="block text-xs text-gray-600 font-semibold uppercase mb-2">Teléfono</label>
                 <input
                   type="tel"
@@ -328,12 +316,11 @@ const FormularioEmpresa = ({ empresa, onClose, onGuardar }) => {
                   value={formData.telefono}
                   onChange={handleChange}
                   placeholder="+56 9 1234 5678"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-500"
                 />
               </div>
 
-              {/* Email */}
-              <div className={`p-4 bg-white rounded-lg border-2 ${errors.email_contacto ? 'border-red-400' : 'border-gray-300'} shadow-sm`}>
+              <div className={`p-4 bg-white rounded-lg border ${errors.email_contacto ? 'border-red-400' : 'border-gray-300'}`}>
                 <label className="block text-xs text-gray-600 font-semibold uppercase mb-2">
                   Email de Contacto {!empresa && formData.crear_usuario && '*'}
                 </label>
@@ -342,32 +329,30 @@ const FormularioEmpresa = ({ empresa, onClose, onGuardar }) => {
                   name="email_contacto"
                   value={formData.email_contacto}
                   onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-500"
                 />
                 {errors.email_contacto && <p className="text-red-500 text-xs mt-1">{errors.email_contacto}</p>}
               </div>
 
-              {/* Fecha convenio */}
-              <div className="p-4 bg-white rounded-lg border-2 border-gray-300 shadow-sm">
+              <div className="p-4 bg-white rounded-lg border border-gray-300">
                 <label className="block text-xs text-gray-600 font-semibold uppercase mb-2">Fecha de Convenio</label>
                 <input
                   type="date"
                   name="fecha_convenio"
                   value={formData.fecha_convenio || ''}
                   onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-500"
                 />
               </div>
 
-              {/* Estado (solo al editar) */}
               {empresa && (
-                <div className="p-4 bg-white rounded-lg border-2 border-gray-300 shadow-sm">
+                <div className="p-4 bg-white rounded-lg border border-gray-300">
                   <label className="block text-xs text-gray-600 font-semibold uppercase mb-2">Estado</label>
                   <select
                     name="estado_empresa"
                     value={formData.estado_empresa}
                     onChange={handleChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-500"
                   >
                     <option value="activa">Activa</option>
                     <option value="inactiva">Inactiva</option>
@@ -380,14 +365,14 @@ const FormularioEmpresa = ({ empresa, onClose, onGuardar }) => {
 
           {/* Sección: Contacto principal */}
           <section className="mb-6">
-            <div className="flex items-center gap-2 mb-3">
-              <div className="w-10 h-10 bg-indigo-600 rounded-lg flex items-center justify-center">
-                <span className="text-xl">👤</span>
+            <div className="flex items-center gap-2 mb-4">
+              <div className="w-10 h-10 bg-gray-700 rounded-lg flex items-center justify-center">
+                <span className="text-lg text-white">👤</span>
               </div>
               <h2 className="text-lg font-bold text-gray-900">Datos del Contacto Principal</h2>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className={`p-4 bg-white rounded-lg border-2 ${errors.contacto_principal ? 'border-red-400' : 'border-gray-300'} shadow-sm`}>
+              <div className={`p-4 bg-white rounded-lg border ${errors.contacto_principal ? 'border-red-400' : 'border-gray-300'}`}>
                 <label className="block text-xs text-gray-600 font-semibold uppercase mb-2">
                   Nombre del Contacto {!empresa && formData.crear_usuario && '*'}
                 </label>
@@ -396,12 +381,12 @@ const FormularioEmpresa = ({ empresa, onClose, onGuardar }) => {
                   name="contacto_principal"
                   value={formData.contacto_principal}
                   onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-500"
                 />
                 {errors.contacto_principal && <p className="text-red-500 text-xs mt-1">{errors.contacto_principal}</p>}
               </div>
 
-              <div className="p-4 bg-white rounded-lg border-2 border-gray-300 shadow-sm">
+              <div className="p-4 bg-white rounded-lg border border-gray-300">
                 <label className="block text-xs text-gray-600 font-semibold uppercase mb-2">Cargo</label>
                 <input
                   type="text"
@@ -409,16 +394,16 @@ const FormularioEmpresa = ({ empresa, onClose, onGuardar }) => {
                   value={formData.cargo_contacto}
                   onChange={handleChange}
                   placeholder="Ej: Gerente General"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-500"
                 />
               </div>
             </div>
           </section>
 
-          {/* Crear usuario (solo al crear) */}
+          {/* Crear usuario */}
           {!empresa && (
             <section className="mb-2">
-              <div className="flex items-start gap-3 p-4 bg-blue-50 border-2 border-blue-200 rounded-lg">
+              <div className="flex items-start gap-3 p-4 bg-gray-100 border border-gray-300 rounded-lg">
                 <input
                   type="checkbox"
                   name="crear_usuario"
@@ -446,7 +431,7 @@ const FormularioEmpresa = ({ empresa, onClose, onGuardar }) => {
                           value={formData.password_usuario}
                           onChange={handleChange}
                           placeholder="Dejar vacío para usar: Empresa123!"
-                          className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-500"
                         />
                         <button
                           type="button"
@@ -468,14 +453,14 @@ const FormularioEmpresa = ({ empresa, onClose, onGuardar }) => {
           )}
         </form>
 
-        {/* Footer fijo con acciones */}
-        <div className="border-t-2 bg-white px-6 py-4 rounded-b-xl flex-shrink-0">
+        {/* Footer */}
+        <div className="border-t bg-white px-6 py-4 rounded-b-xl flex-shrink-0">
           <div className="flex flex-col sm:flex-row gap-3">
             <button
               type="button"
               onClick={onClose}
               disabled={loading}
-              className="flex-1 px-4 py-2.5 border-2 border-gray-400 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors font-semibold disabled:opacity-50"
+              className="flex-1 px-4 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-semibold disabled:opacity-50"
             >
               Cancelar
             </button>
@@ -483,11 +468,10 @@ const FormularioEmpresa = ({ empresa, onClose, onGuardar }) => {
               type="submit"
               disabled={loading}
               onClick={(e) => {
-                // dispara el submit del <form> anterior
                 const formEl = e.currentTarget.closest('div').parentElement.previousElementSibling;
                 formEl?.requestSubmit?.();
               }}
-              className="flex-1 px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-semibold flex items-center justify-center gap-2 shadow-md disabled:opacity-50"
+              className="flex-1 px-4 py-2.5 bg-gray-800 text-white rounded-lg hover:bg-gray-900 transition-colors font-semibold flex items-center justify-center gap-2 shadow-md disabled:opacity-50"
             >
               {loading ? (
                 <>

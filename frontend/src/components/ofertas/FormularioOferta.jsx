@@ -1,5 +1,5 @@
 // 📁 UBICACIÓN: frontend/src/components/ofertas/FormularioOferta.jsx
-// 🎯 Formulario para crear y editar ofertas de práctica — ESTILO ALTO CONTRASTE (match DetalleOferta)
+// 🎯 Formulario para crear y editar ofertas de práctica — TEMA GRIS PROFESIONAL
 
 import { useState, useEffect } from 'react';
 import { createOferta, updateOferta, getEmpresas, getEspecialidades } from '../../servicios/api/ofertasService';
@@ -26,11 +26,11 @@ export default function FormularioOferta({ oferta, onClose, onSuccess }) {
   const [empresas, setEmpresas] = useState([]);
   const [especialidades, setEspecialidades] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [softLoading, setSoftLoading] = useState(true); // carga inicial para skeleton suave
+  const [softLoading, setSoftLoading] = useState(true);
   const [error, setError] = useState('');
   const [errors, setErrors] = useState({});
 
-  // === Helpers visuales (mismos de DetalleOferta) ===
+  // === Helpers visuales ===
   const getEstadoBadge = (estado) => {
     const badges = {
       activa: 'bg-emerald-500 text-white',
@@ -76,7 +76,6 @@ export default function FormularioOferta({ oferta, onClose, onSuccess }) {
       setSoftLoading(false);
     };
     init();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [oferta?.id_oferta]);
 
   const fetchData = async () => {
@@ -90,31 +89,21 @@ export default function FormularioOferta({ oferta, onClose, onSuccess }) {
     }
   };
 
-  // === Manejo de cambios ===
   const handleChange = (e) => {
     const { name, value } = e.target;
-
-    // Normaliza numéricos a valores >= 0
     const numericFields = ['duracion_horas', 'cupos_disponibles', 'salario_referencial'];
     const val = numericFields.includes(name) ? (value === '' ? '' : Math.max(0, Number(value))) : value;
-
     setFormData((prev) => ({ ...prev, [name]: val }));
-
-    // Limpia error de ese campo
     if (errors[name]) {
       setErrors((prev) => ({ ...prev, [name]: '' }));
     }
-    // Reglas UX: si cambia fecha_inicio y existe fecha_limite, validamos de nuevo
     if ((name === 'fecha_inicio' || name === 'fecha_limite_postulacion') && (formData.fecha_inicio || formData.fecha_limite_postulacion)) {
       validateForm({ ...formData, [name]: val });
     }
   };
 
-  // === Validación ===
   const validateForm = (data = formData) => {
     const newErrors = {};
-
-    // Requeridos mínimos
     const required = {
       id_empresa: 'Selecciona una empresa',
       id_especialidad: 'Selecciona una especialidad',
@@ -130,7 +119,6 @@ export default function FormularioOferta({ oferta, onClose, onSuccess }) {
       if (data[k] === '' || data[k] === null || data[k] === undefined) newErrors[k] = msg;
     });
 
-    // Reglas de fecha
     if (data.fecha_limite_postulacion && data.fecha_inicio) {
       const fechaLimite = new Date(data.fecha_limite_postulacion);
       const fechaInicio = new Date(data.fecha_inicio);
@@ -148,7 +136,6 @@ export default function FormularioOferta({ oferta, onClose, onSuccess }) {
       }
     }
 
-    // Rango sugerido (UX): horas y cupos
     if (data.duracion_horas && Number(data.duracion_horas) === 0) {
       newErrors.duracion_horas = 'La duración debe ser mayor a 0';
     }
@@ -160,7 +147,6 @@ export default function FormularioOferta({ oferta, onClose, onSuccess }) {
     return Object.keys(newErrors).length === 0;
   };
 
-  // === Submit ===
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validateForm()) return;
@@ -189,10 +175,9 @@ export default function FormularioOferta({ oferta, onClose, onSuccess }) {
     }
   };
 
-  // === Esqueleto carga suave ===
   if (softLoading) {
     return (
-      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <div className="fixed inset-0 bg-gray-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
         <div className="bg-white rounded-xl p-8 shadow-xl w-full max-w-2xl">
           <div className="animate-pulse space-y-4">
             <div className="h-8 bg-gray-200 rounded w-1/2" />
@@ -207,10 +192,10 @@ export default function FormularioOferta({ oferta, onClose, onSuccess }) {
   }
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+    <div className="fixed inset-0 bg-gray-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-xl shadow-2xl max-w-5xl w-full max-h-[92vh] flex flex-col">
-        {/* Header Fijo con degradado (match DetalleOferta) */}
-        <div className="relative bg-gradient-to-r from-indigo-600 to-blue-600 text-white p-6 rounded-t-xl flex-shrink-0">
+        {/* Header Gris Profesional */}
+        <div className="relative bg-gradient-to-r from-gray-800 to-gray-900 text-white p-6 rounded-t-xl flex-shrink-0">
           <button
             onClick={onClose}
             className="absolute top-4 right-4 w-8 h-8 bg-white/20 hover:bg-white/30 rounded-lg flex items-center justify-center transition-colors"
@@ -232,12 +217,12 @@ export default function FormularioOferta({ oferta, onClose, onSuccess }) {
                     <span className="capitalize">{formData.estado_oferta}</span>
                   </span>
                 ) : (
-                  <span className="px-3 py-1.5 bg-white text-indigo-700 rounded-lg text-xs font-bold shadow-md">
+                  <span className="px-3 py-1.5 bg-white text-gray-800 rounded-lg text-xs font-bold shadow-md">
                     Nueva Oferta
                   </span>
                 )}
 
-                <span className="px-3 py-1.5 bg-white text-indigo-700 rounded-lg text-xs font-bold shadow-md capitalize">
+                <span className="px-3 py-1.5 bg-white text-gray-800 rounded-lg text-xs font-bold shadow-md capitalize">
                   {getModalidadIcon(formData.modalidad_trabajo)} {formData.modalidad_trabajo}
                 </span>
               </div>
@@ -245,7 +230,7 @@ export default function FormularioOferta({ oferta, onClose, onSuccess }) {
               <h1 className="text-2xl font-bold mb-1 break-words">
                 {formData.titulo_oferta || (oferta ? 'Editar Oferta' : 'Crear Oferta')}
               </h1>
-              <p className="text-blue-100 flex items-center gap-1.5 text-sm">
+              <p className="text-gray-300 flex items-center gap-1.5 text-sm">
                 <span>🏢</span>
                 <span className="truncate">
                   {empresas.find((e) => String(e.id_empresa) === String(formData.id_empresa))?.razon_social || 'Selecciona empresa'}
@@ -257,16 +242,15 @@ export default function FormularioOferta({ oferta, onClose, onSuccess }) {
 
         {/* Contenido scrollable */}
         <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 bg-gray-50">
-          {/* Error global */}
           {error && (
             <div className="mb-6 bg-red-100 border-2 border-red-300 text-red-800 px-4 py-3 rounded-lg shadow-sm">
               {error}
             </div>
           )}
 
-          {/* Stats rápidos (preview) */}
+          {/* Stats rápidos */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-            <div className="bg-white p-4 rounded-lg border-2 border-blue-200 shadow-sm">
+            <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
               <div className="flex items-center gap-2 mb-2">
                 <span className="text-2xl">🎯</span>
                 <span className="text-xs text-gray-600 font-semibold uppercase">Cupos</span>
@@ -274,7 +258,7 @@ export default function FormularioOferta({ oferta, onClose, onSuccess }) {
               <p className="font-bold text-gray-900 text-lg">{formData.cupos_disponibles || 0}</p>
             </div>
 
-            <div className="bg-white p-4 rounded-lg border-2 border-purple-200 shadow-sm">
+            <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
               <div className="flex items-center gap-2 mb-2">
                 <span className="text-2xl">⏰</span>
                 <span className="text-xs text-gray-600 font-semibold uppercase">Duración</span>
@@ -282,7 +266,7 @@ export default function FormularioOferta({ oferta, onClose, onSuccess }) {
               <p className="font-bold text-gray-900 text-lg">{formData.duracion_horas ? `${formData.duracion_horas}h` : '—'}</p>
             </div>
 
-            <div className="bg-white p-4 rounded-lg border-2 border-emerald-200 shadow-sm">
+            <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
               <div className="flex items-center gap-2 mb-2">
                 <span className="text-2xl">💰</span>
                 <span className="text-xs text-gray-600 font-semibold uppercase">Salario ref.</span>
@@ -294,15 +278,14 @@ export default function FormularioOferta({ oferta, onClose, onSuccess }) {
           {/* Sección: Información principal */}
           <section className="mb-6">
             <div className="flex items-center gap-2 mb-3">
-              <div className="w-10 h-10 bg-indigo-600 rounded-lg flex items-center justify-center">
-                <span className="text-xl">📋</span>
+              <div className="w-10 h-10 bg-gray-700 rounded-lg flex items-center justify-center">
+                <span className="text-xl text-white">📋</span>
               </div>
               <h2 className="text-lg font-bold text-gray-900">Información principal</h2>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Empresa */}
-              <div className={`p-4 bg-white rounded-lg border-2 ${errors.id_empresa ? 'border-red-400' : 'border-gray-300'} shadow-sm`}>
+              <div className={`p-4 bg-white rounded-lg border ${errors.id_empresa ? 'border-red-400' : 'border-gray-300'} shadow-sm`}>
                 <label className="block text-xs text-gray-600 font-semibold uppercase mb-2">
                   Empresa <span className="text-red-500">*</span>
                 </label>
@@ -311,7 +294,7 @@ export default function FormularioOferta({ oferta, onClose, onSuccess }) {
                   value={formData.id_empresa}
                   onChange={handleChange}
                   required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-500"
                 >
                   <option value="">Seleccione empresa</option>
                   {empresas.map(emp => (
@@ -321,8 +304,7 @@ export default function FormularioOferta({ oferta, onClose, onSuccess }) {
                 {errors.id_empresa && <p className="text-red-500 text-xs mt-2">{errors.id_empresa}</p>}
               </div>
 
-              {/* Especialidad */}
-              <div className={`p-4 bg-white rounded-lg border-2 ${errors.id_especialidad ? 'border-red-400' : 'border-gray-300'} shadow-sm`}>
+              <div className={`p-4 bg-white rounded-lg border ${errors.id_especialidad ? 'border-red-400' : 'border-gray-300'} shadow-sm`}>
                 <label className="block text-xs text-gray-600 font-semibold uppercase mb-2">
                   Especialidad <span className="text-red-500">*</span>
                 </label>
@@ -331,7 +313,7 @@ export default function FormularioOferta({ oferta, onClose, onSuccess }) {
                   value={formData.id_especialidad}
                   onChange={handleChange}
                   required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-500"
                 >
                   <option value="">Seleccione especialidad</option>
                   {especialidades.map(esp => (
@@ -341,8 +323,7 @@ export default function FormularioOferta({ oferta, onClose, onSuccess }) {
                 {errors.id_especialidad && <p className="text-red-500 text-xs mt-2">{errors.id_especialidad}</p>}
               </div>
 
-              {/* Título */}
-              <div className={`md:col-span-2 p-4 bg-white rounded-lg border-2 ${errors.titulo_oferta ? 'border-red-400' : 'border-gray-300'} shadow-sm`}>
+              <div className={`md:col-span-2 p-4 bg-white rounded-lg border ${errors.titulo_oferta ? 'border-red-400' : 'border-gray-300'} shadow-sm`}>
                 <label className="block text-xs text-gray-600 font-semibold uppercase mb-2">
                   Título de la Oferta <span className="text-red-500">*</span>
                 </label>
@@ -352,7 +333,7 @@ export default function FormularioOferta({ oferta, onClose, onSuccess }) {
                   value={formData.titulo_oferta}
                   onChange={handleChange}
                   required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-500"
                   placeholder="Ej: Práctica Profesional en Mecánica Industrial"
                 />
                 {errors.titulo_oferta && <p className="text-red-500 text-xs mt-2">{errors.titulo_oferta}</p>}
@@ -363,15 +344,14 @@ export default function FormularioOferta({ oferta, onClose, onSuccess }) {
           {/* Sección: Descripción y Requisitos */}
           <section className="mb-6">
             <div className="flex items-center gap-2 mb-3">
-              <div className="w-10 h-10 bg-indigo-600 rounded-lg flex items-center justify-center">
-                <span className="text-xl">📝</span>
+              <div className="w-10 h-10 bg-gray-700 rounded-lg flex items-center justify-center">
+                <span className="text-xl text-white">📝</span>
               </div>
               <h2 className="text-lg font-bold text-gray-900">Descripción y requisitos</h2>
             </div>
 
             <div className="grid grid-cols-1 gap-4">
-              {/* Descripción */}
-              <div className={`p-4 bg-white rounded-lg border-2 ${errors.descripcion ? 'border-red-400' : 'border-gray-300'} shadow-sm`}>
+              <div className={`p-4 bg-white rounded-lg border ${errors.descripcion ? 'border-red-400' : 'border-gray-300'} shadow-sm`}>
                 <label className="block text-xs text-gray-600 font-semibold uppercase mb-2">
                   Descripción <span className="text-red-500">*</span>
                 </label>
@@ -381,21 +361,20 @@ export default function FormularioOferta({ oferta, onClose, onSuccess }) {
                   onChange={handleChange}
                   required
                   rows="3"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-500"
                   placeholder="Describe las actividades y responsabilidades..."
                 />
                 {errors.descripcion && <p className="text-red-500 text-xs mt-2">{errors.descripcion}</p>}
               </div>
 
-              {/* Requisitos */}
-              <div className="p-4 bg-white rounded-lg border-2 border-gray-300 shadow-sm">
+              <div className="p-4 bg-white rounded-lg border border-gray-300 shadow-sm">
                 <label className="block text-xs text-gray-600 font-semibold uppercase mb-2">Requisitos</label>
                 <textarea
                   name="requisitos"
                   value={formData.requisitos}
                   onChange={handleChange}
                   rows="2"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-500"
                   placeholder="Requisitos para postular..."
                 />
               </div>
@@ -405,16 +384,15 @@ export default function FormularioOferta({ oferta, onClose, onSuccess }) {
           {/* Sección: Detalles operativos */}
           <section className="mb-6">
             <div className="flex items-center gap-2 mb-3">
-              <div className="w-10 h-10 bg-indigo-600 rounded-lg flex items-center justify-center">
-                <span className="text-xl">⚙️</span>
+              <div className="w-10 h-10 bg-gray-700 rounded-lg flex items-center justify-center">
+                <span className="text-xl text-white">⚙️</span>
               </div>
               <h2 className="text-lg font-bold text-gray-900">Detalles de la práctica</h2>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Duración */}
-              <div className={`flex items-center gap-3 p-4 bg-white rounded-lg border-2 ${errors.duracion_horas ? 'border-red-400' : 'border-gray-300'} shadow-sm`}>
-                <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center flex-shrink-0">
+              <div className={`flex items-center gap-3 p-4 bg-white rounded-lg border ${errors.duracion_horas ? 'border-red-400' : 'border-gray-300'} shadow-sm`}>
+                <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0">
                   <span className="text-2xl">⏰</span>
                 </div>
                 <div className="min-w-0 flex-1">
@@ -426,15 +404,14 @@ export default function FormularioOferta({ oferta, onClose, onSuccess }) {
                     onChange={handleChange}
                     required
                     min="1"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-500"
                   />
                   {errors.duracion_horas && <p className="text-red-500 text-xs mt-1">{errors.duracion_horas}</p>}
                 </div>
               </div>
 
-              {/* Cupos */}
-              <div className={`flex items-center gap-3 p-4 bg-white rounded-lg border-2 ${errors.cupos_disponibles ? 'border-red-400' : 'border-gray-300'} shadow-sm`}>
-                <div className="w-12 h-12 bg-emerald-100 rounded-lg flex items-center justify-center flex-shrink-0">
+              <div className={`flex items-center gap-3 p-4 bg-white rounded-lg border ${errors.cupos_disponibles ? 'border-red-400' : 'border-gray-300'} shadow-sm`}>
+                <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0">
                   <span className="text-2xl">🎯</span>
                 </div>
                 <div className="min-w-0 flex-1">
@@ -446,15 +423,14 @@ export default function FormularioOferta({ oferta, onClose, onSuccess }) {
                     onChange={handleChange}
                     required
                     min="1"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-500"
                   />
                   {errors.cupos_disponibles && <p className="text-red-500 text-xs mt-1">{errors.cupos_disponibles}</p>}
                 </div>
               </div>
 
-              {/* Horario */}
-              <div className="flex items-center gap-3 p-4 bg-white rounded-lg border-2 border-gray-300 shadow-sm">
-                <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
+              <div className="flex items-center gap-3 p-4 bg-white rounded-lg border border-gray-300 shadow-sm">
+                <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0">
                   <span className="text-2xl">🕐</span>
                 </div>
                 <div className="min-w-0 flex-1">
@@ -464,15 +440,14 @@ export default function FormularioOferta({ oferta, onClose, onSuccess }) {
                     name="horario_trabajo"
                     value={formData.horario_trabajo}
                     onChange={handleChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-500"
                     placeholder="Ej: Lunes a Viernes 9:00-18:00"
                   />
                 </div>
               </div>
 
-              {/* Ubicación */}
-              <div className="flex items-center gap-3 p-4 bg-white rounded-lg border-2 border-gray-300 shadow-sm">
-                <div className="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center flex-shrink-0">
+              <div className="flex items-center gap-3 p-4 bg-white rounded-lg border border-gray-300 shadow-sm">
+                <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0">
                   <span className="text-2xl">📍</span>
                 </div>
                 <div className="min-w-0 flex-1">
@@ -482,15 +457,14 @@ export default function FormularioOferta({ oferta, onClose, onSuccess }) {
                     name="ubicacion"
                     value={formData.ubicacion}
                     onChange={handleChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-500"
                     placeholder="Dirección o ciudad"
                   />
                 </div>
               </div>
 
-              {/* Modalidad */}
-              <div className="flex items-center gap-3 p-4 bg-white rounded-lg border-2 border-gray-300 shadow-sm">
-                <div className="w-12 h-12 bg-sky-100 rounded-lg flex items-center justify-center flex-shrink-0">
+              <div className="flex items-center gap-3 p-4 bg-white rounded-lg border border-gray-300 shadow-sm">
+                <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0">
                   <span className="text-2xl">{getModalidadIcon(formData.modalidad_trabajo)}</span>
                 </div>
                 <div className="min-w-0 flex-1">
@@ -500,7 +474,7 @@ export default function FormularioOferta({ oferta, onClose, onSuccess }) {
                     value={formData.modalidad_trabajo}
                     onChange={handleChange}
                     required
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 capitalize"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-500 capitalize"
                   >
                     <option value="presencial">Presencial</option>
                     <option value="remoto">Remoto</option>
@@ -509,9 +483,8 @@ export default function FormularioOferta({ oferta, onClose, onSuccess }) {
                 </div>
               </div>
 
-              {/* Salario */}
-              <div className="flex items-center gap-3 p-4 bg-white rounded-lg border-2 border-gray-300 shadow-sm">
-                <div className="w-12 h-12 bg-emerald-100 rounded-lg flex items-center justify-center flex-shrink-0">
+              <div className="flex items-center gap-3 p-4 bg-white rounded-lg border border-gray-300 shadow-sm">
+                <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0">
                   <span className="text-2xl">💰</span>
                 </div>
                 <div className="min-w-0 flex-1">
@@ -521,15 +494,14 @@ export default function FormularioOferta({ oferta, onClose, onSuccess }) {
                     name="salario_referencial"
                     value={formData.salario_referencial}
                     onChange={handleChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-500"
                     placeholder="0"
                   />
                 </div>
               </div>
 
-              {/* Fechas */}
-              <div className={`flex items-center gap-3 p-4 bg-white rounded-lg border-2 ${errors.fecha_limite_postulacion ? 'border-red-400' : 'border-gray-300'} shadow-sm`}>
-                <div className="w-12 h-12 bg-amber-100 rounded-lg flex items-center justify-center flex-shrink-0">
+              <div className={`flex items-center gap-3 p-4 bg-white rounded-lg border ${errors.fecha_limite_postulacion ? 'border-red-400' : 'border-gray-300'} shadow-sm`}>
+                <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0">
                   <span className="text-2xl">📅</span>
                 </div>
                 <div className="min-w-0 flex-1">
@@ -540,15 +512,15 @@ export default function FormularioOferta({ oferta, onClose, onSuccess }) {
                     value={formData.fecha_limite_postulacion}
                     onChange={handleChange}
                     required
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-500"
                   />
                   {errors.fecha_limite_postulacion && <p className="text-red-500 text-xs mt-1">{errors.fecha_limite_postulacion}</p>}
                   <p className="text-xs text-gray-500 mt-1">Fecha hasta la cual los estudiantes pueden postular</p>
                 </div>
               </div>
 
-              <div className={`flex items-center gap-3 p-4 bg-white rounded-lg border-2 ${errors.fecha_inicio ? 'border-red-400' : 'border-gray-300'} shadow-sm`}>
-                <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center flex-shrink-0">
+              <div className={`flex items-center gap-3 p-4 bg-white rounded-lg border ${errors.fecha_inicio ? 'border-red-400' : 'border-gray-300'} shadow-sm`}>
+                <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0">
                   <span className="text-2xl">⏳</span>
                 </div>
                 <div className="min-w-0 flex-1">
@@ -559,7 +531,7 @@ export default function FormularioOferta({ oferta, onClose, onSuccess }) {
                     value={formData.fecha_inicio}
                     onChange={handleChange}
                     required
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-500"
                   />
                   {errors.fecha_inicio && <p className="text-red-500 text-xs mt-1">{errors.fecha_inicio}</p>}
                   <p className="text-xs text-gray-500 mt-1">Fecha en que comienza la práctica</p>
@@ -571,35 +543,33 @@ export default function FormularioOferta({ oferta, onClose, onSuccess }) {
           {/* Sección: Beneficios y Estado */}
           <section className="mb-2">
             <div className="flex items-center gap-2 mb-3">
-              <div className="w-10 h-10 bg-indigo-600 rounded-lg flex items-center justify-center">
-                <span className="text-xl">🎁</span>
+              <div className="w-10 h-10 bg-gray-700 rounded-lg flex items-center justify-center">
+                <span className="text-xl text-white">🎁</span>
               </div>
               <h2 className="text-lg font-bold text-gray-900">Beneficios y estado</h2>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Beneficios */}
-              <div className="p-4 bg-white rounded-lg border-2 border-pink-300 shadow-sm md:col-span-2">
+              <div className="p-4 bg-white rounded-lg border border-gray-300 shadow-sm md:col-span-2">
                 <label className="block text-xs text-gray-600 font-semibold uppercase mb-2">Beneficios</label>
                 <textarea
                   name="beneficios"
                   value={formData.beneficios}
                   onChange={handleChange}
                   rows="2"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-500"
                   placeholder="Beneficios adicionales de la práctica..."
                 />
               </div>
 
-              {/* Estado (solo al editar) */}
               {oferta && (
-                <div className="p-4 bg-white rounded-lg border-2 border-gray-300 shadow-sm">
+                <div className="p-4 bg-white rounded-lg border border-gray-300 shadow-sm">
                   <label className="block text-xs text-gray-600 font-semibold uppercase mb-2">Estado</label>
                   <select
                     name="estado_oferta"
                     value={formData.estado_oferta}
                     onChange={handleChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-500"
                   >
                     <option value="activa">Activa</option>
                     <option value="pausada">Pausada</option>
@@ -612,26 +582,25 @@ export default function FormularioOferta({ oferta, onClose, onSuccess }) {
         </form>
 
         {/* Footer fijo (acciones) */}
-        <div className="border-t-2 bg-white px-6 py-4 rounded-b-xl flex-shrink-0">
+        <div className="border-t bg-white px-6 py-4 rounded-b-xl flex-shrink-0">
           <div className="flex flex-col sm:flex-row gap-3">
             <button
               type="button"
               onClick={onClose}
               disabled={loading}
-              className="flex-1 px-4 py-2.5 border-2 border-gray-400 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors font-semibold disabled:opacity-50"
+              className="flex-1 px-4 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-semibold disabled:opacity-50"
             >
               Cancelar
             </button>
             <button
               type="submit"
-              form="__noop__" // evita warnings; el submit real se engancha en el form padre automáticamente
+              form="__noop__"
               onClick={(e) => {
-                // Busca el form más cercano y dispara el submit
                 const form = e.currentTarget.closest('div').parentElement.previousElementSibling;
                 form?.requestSubmit?.();
               }}
               disabled={loading}
-              className="flex-1 px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-semibold flex items-center justify-center gap-2 shadow-md disabled:opacity-50"
+              className="flex-1 px-4 py-2.5 bg-gray-800 text-white rounded-lg hover:bg-gray-900 transition-colors font-semibold flex items-center justify-center gap-2 shadow-md disabled:opacity-50"
             >
               {loading ? (
                 <>

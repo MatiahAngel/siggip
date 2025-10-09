@@ -1,5 +1,5 @@
 // 📁 UBICACIÓN: frontend/src/components/ofertas/DetalleOferta.jsx
-// 🎯 Vista detallada de una oferta de práctica - CON MÁS DATOS DE EMPRESA
+// 🎯 Vista detallada de una oferta de práctica - TEMA GRIS PROFESIONAL
 
 import { useState, useEffect } from 'react';
 import { getOfertaById } from '../../servicios/api/ofertasService';
@@ -72,9 +72,9 @@ export default function DetalleOferta({ idOferta, onClose, onEditar }) {
 
   if (loading) {
     return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="fixed inset-0 bg-gray-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
         <div className="bg-white rounded-xl p-8 shadow-xl">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-800 mx-auto mb-4"></div>
           <p className="text-gray-700 font-medium text-center">Cargando oferta...</p>
         </div>
       </div>
@@ -83,7 +83,7 @@ export default function DetalleOferta({ idOferta, onClose, onEditar }) {
 
   if (error || !oferta) {
     return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="fixed inset-0 bg-gray-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
         <div className="bg-white rounded-xl p-8 max-w-md shadow-xl">
           <div className="text-center mb-6">
             <span className="text-6xl">⚠️</span>
@@ -101,10 +101,10 @@ export default function DetalleOferta({ idOferta, onClose, onEditar }) {
   }
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+    <div className="fixed inset-0 bg-gray-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] flex flex-col">
-        {/* Header Fijo */}
-        <div className="relative bg-gradient-to-r from-indigo-600 to-blue-600 text-white p-6 rounded-t-xl flex-shrink-0">
+        {/* Header Gris Profesional */}
+        <div className="relative bg-gradient-to-r from-gray-800 to-gray-900 text-white p-6 rounded-t-xl flex-shrink-0">
           <button
             onClick={onClose}
             className="absolute top-4 right-4 w-8 h-8 rounded-lg flex items-center justify-center transition-colors bg-white/20 hover:bg-white/30 focus:outline-none focus:ring-2 focus:ring-white/60"
@@ -123,13 +123,13 @@ export default function DetalleOferta({ idOferta, onClose, onEditar }) {
                   <span>{getEstadoIcon(oferta.estado_oferta)}</span>
                   <span className="capitalize">{oferta.estado_oferta}</span>
                 </span>
-                <span className="px-3 py-1.5 bg-white text-indigo-600 rounded-lg text-xs font-bold shadow-md">
+                <span className="px-3 py-1.5 bg-white text-gray-800 rounded-lg text-xs font-bold shadow-md">
                   {oferta.codigo_oferta}
                 </span>
               </div>
               
               <h1 className="text-2xl font-bold mb-1 break-words">{oferta.titulo_oferta}</h1>
-              <p className="text-blue-100 flex items-center gap-1.5 text-sm">
+              <p className="text-gray-300 flex items-center gap-1.5 text-sm">
                 <span>🏢</span>
                 <span className="truncate">{oferta.empresa_nombre}</span>
               </p>
@@ -141,7 +141,7 @@ export default function DetalleOferta({ idOferta, onClose, onEditar }) {
         <div className="flex-1 overflow-y-auto p-6 bg-gray-50">
           {/* Stats rápidos */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-            <div className="bg-white p-4 rounded-lg border-2 border-blue-200 shadow-sm">
+            <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
               <div className="flex items-center gap-2 mb-2">
                 <span className="text-2xl">{getModalidadIcon(oferta.modalidad_trabajo)}</span>
                 <span className="text-xs text-gray-600 font-semibold uppercase">Modalidad</span>
@@ -149,7 +149,7 @@ export default function DetalleOferta({ idOferta, onClose, onEditar }) {
               <p className="font-bold text-gray-900 text-lg capitalize">{oferta.modalidad_trabajo}</p>
             </div>
 
-            <div className="bg-white p-4 rounded-lg border-2 border-purple-200 shadow-sm">
+            <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
               <div className="flex items-center gap-2 mb-2">
                 <span className="text-2xl">⏰</span>
                 <span className="text-xs text-gray-600 font-semibold uppercase">Duración</span>
@@ -157,7 +157,7 @@ export default function DetalleOferta({ idOferta, onClose, onEditar }) {
               <p className="font-bold text-gray-900 text-lg">{oferta.duracion_horas}h</p>
             </div>
 
-            <div className="bg-white p-4 rounded-lg border-2 border-emerald-200 shadow-sm">
+            <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
               <div className="flex items-center gap-2 mb-2">
                 <span className="text-2xl">🎯</span>
                 <span className="text-xs text-gray-600 font-semibold uppercase">Cupos</span>
@@ -169,12 +169,12 @@ export default function DetalleOferta({ idOferta, onClose, onEditar }) {
           {/* Descripción */}
           <section className="mb-6">
             <div className="flex items-center gap-2 mb-3">
-              <div className="w-10 h-10 bg-indigo-600 rounded-lg flex items-center justify-center">
-                <span className="text-xl">📋</span>
+              <div className="w-10 h-10 bg-gray-700 rounded-lg flex items-center justify-center">
+                <span className="text-xl text-white">📋</span>
               </div>
               <h2 className="text-lg font-bold text-gray-900">Descripción de la práctica</h2>
             </div>
-            <div className="bg-white border-2 border-gray-300 rounded-lg p-4 shadow-sm">
+            <div className="bg-white border border-gray-300 rounded-lg p-4 shadow-sm">
               <p className="text-gray-700 whitespace-pre-wrap text-sm leading-relaxed">
                 {oferta.descripcion}
               </p>
@@ -186,7 +186,7 @@ export default function DetalleOferta({ idOferta, onClose, onEditar }) {
             <section className="mb-6">
               <div className="flex items-center gap-2 mb-3">
                 <div className="w-10 h-10 bg-red-600 rounded-lg flex items-center justify-center">
-                  <span className="text-xl">⚠️</span>
+                  <span className="text-xl text-white">⚠️</span>
                 </div>
                 <h2 className="text-lg font-bold text-gray-900">Requisitos Importantes</h2>
               </div>
@@ -211,14 +211,14 @@ export default function DetalleOferta({ idOferta, onClose, onEditar }) {
           {/* Detalles */}
           <section className="mb-6">
             <div className="flex items-center gap-2 mb-3">
-              <div className="w-10 h-10 bg-indigo-600 rounded-lg flex items-center justify-center">
-                <span className="text-xl">📍</span>
+              <div className="w-10 h-10 bg-gray-700 rounded-lg flex items-center justify-center">
+                <span className="text-xl text-white">📍</span>
               </div>
               <h2 className="text-lg font-bold text-gray-900">Detalles de la práctica</h2>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div className="flex items-center gap-3 p-4 bg-white rounded-lg border-2 border-gray-300 shadow-sm">
-                <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
+              <div className="flex items-center gap-3 p-4 bg-white rounded-lg border border-gray-300 shadow-sm">
+                <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0">
                   <span className="text-2xl">🎓</span>
                 </div>
                 <div className="min-w-0">
@@ -228,8 +228,8 @@ export default function DetalleOferta({ idOferta, onClose, onEditar }) {
               </div>
 
               {oferta.ubicacion && (
-                <div className="flex items-center gap-3 p-4 bg-white rounded-lg border-2 border-gray-300 shadow-sm">
-                  <div className="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                <div className="flex items-center gap-3 p-4 bg-white rounded-lg border border-gray-300 shadow-sm">
+                  <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0">
                     <span className="text-2xl">📍</span>
                   </div>
                   <div className="min-w-0">
@@ -240,8 +240,8 @@ export default function DetalleOferta({ idOferta, onClose, onEditar }) {
               )}
 
               {oferta.horario_trabajo && (
-                <div className="flex items-center gap-3 p-4 bg-white rounded-lg border-2 border-gray-300 shadow-sm">
-                  <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                <div className="flex items-center gap-3 p-4 bg-white rounded-lg border border-gray-300 shadow-sm">
+                  <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0">
                     <span className="text-2xl">🕐</span>
                   </div>
                   <div className="min-w-0">
@@ -252,8 +252,8 @@ export default function DetalleOferta({ idOferta, onClose, onEditar }) {
               )}
 
               {oferta.salario_referencial && (
-                <div className="flex items-center gap-3 p-4 bg-white rounded-lg border-2 border-gray-300 shadow-sm">
-                  <div className="w-12 h-12 bg-emerald-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                <div className="flex items-center gap-3 p-4 bg-white rounded-lg border border-gray-300 shadow-sm">
+                  <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0">
                     <span className="text-2xl">💰</span>
                   </div>
                   <div className="min-w-0">
@@ -263,8 +263,8 @@ export default function DetalleOferta({ idOferta, onClose, onEditar }) {
                 </div>
               )}
 
-              <div className="flex items-center gap-3 p-4 bg-white rounded-lg border-2 border-gray-300 shadow-sm">
-                <div className="w-12 h-12 bg-amber-100 rounded-lg flex items-center justify-center flex-shrink-0">
+              <div className="flex items-center gap-3 p-4 bg-white rounded-lg border border-gray-300 shadow-sm">
+                <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0">
                   <span className="text-2xl">📅</span>
                 </div>
                 <div className="min-w-0">
@@ -273,8 +273,8 @@ export default function DetalleOferta({ idOferta, onClose, onEditar }) {
                 </div>
               </div>
 
-              <div className="flex items-center gap-3 p-4 bg-white rounded-lg border-2 border-gray-300 shadow-sm">
-                <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center flex-shrink-0">
+              <div className="flex items-center gap-3 p-4 bg-white rounded-lg border border-gray-300 shadow-sm">
+                <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0">
                   <span className="text-2xl">⏳</span>
                 </div>
                 <div className="min-w-0">
@@ -289,12 +289,12 @@ export default function DetalleOferta({ idOferta, onClose, onEditar }) {
           {oferta.beneficios && (
             <section className="mb-6">
               <div className="flex items-center gap-2 mb-3">
-                <div className="w-10 h-10 bg-pink-600 rounded-lg flex items-center justify-center">
-                  <span className="text-xl">🎁</span>
+                <div className="w-10 h-10 bg-gray-700 rounded-lg flex items-center justify-center">
+                  <span className="text-xl text-white">🎁</span>
                 </div>
                 <h2 className="text-lg font-bold text-gray-900">Beneficios</h2>
               </div>
-              <div className="bg-white border-2 border-pink-300 rounded-lg p-4 shadow-sm">
+              <div className="bg-white border border-gray-300 rounded-lg p-4 shadow-sm">
                 <p className="text-gray-700 whitespace-pre-wrap text-sm leading-relaxed">
                   {oferta.beneficios}
                 </p>
@@ -305,15 +305,15 @@ export default function DetalleOferta({ idOferta, onClose, onEditar }) {
           {/* INFORMACIÓN COMPLETA DE LA EMPRESA */}
           <section className="mb-4">
             <div className="flex items-center gap-2 mb-3">
-              <div className="w-10 h-10 bg-blue-700 rounded-lg flex items-center justify-center">
-                <span className="text-xl">🏢</span>
+              <div className="w-10 h-10 bg-gray-700 rounded-lg flex items-center justify-center">
+                <span className="text-xl text-white">🏢</span>
               </div>
               <h2 className="text-lg font-bold text-gray-900">Información de la Empresa</h2>
             </div>
             
-            <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-300 rounded-lg p-5 shadow-md">
+            <div className="bg-gradient-to-br from-gray-50 to-gray-100 border-2 border-gray-300 rounded-lg p-5 shadow-md">
               {/* Datos principales */}
-              <div className="bg-white rounded-lg p-4 mb-3 border-2 border-blue-200">
+              <div className="bg-white rounded-lg p-4 mb-3 border border-gray-200">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <p className="text-xs text-gray-600 font-bold uppercase mb-1">Razón Social</p>
@@ -352,7 +352,7 @@ export default function DetalleOferta({ idOferta, onClose, onEditar }) {
 
               {/* Ubicación de la empresa */}
               {(oferta.direccion_empresa || oferta.comuna_empresa || oferta.region_empresa) && (
-                <div className="bg-white rounded-lg p-4 mb-3 border-2 border-blue-200">
+                <div className="bg-white rounded-lg p-4 mb-3 border border-gray-200">
                   <div className="flex items-center gap-2 mb-3">
                     <span className="text-lg">📍</span>
                     <p className="text-sm font-bold text-gray-800">Ubicación de la Empresa</p>
@@ -382,7 +382,7 @@ export default function DetalleOferta({ idOferta, onClose, onEditar }) {
 
               {/* Contacto de la empresa */}
               {(oferta.telefono_empresa || oferta.email_contacto_empresa || oferta.contacto_principal || oferta.cargo_contacto) && (
-                <div className="bg-white rounded-lg p-4 border-2 border-blue-200">
+                <div className="bg-white rounded-lg p-4 border border-gray-200">
                   <div className="flex items-center gap-2 mb-3">
                     <span className="text-lg">📞</span>
                     <p className="text-sm font-bold text-gray-800">Información de Contacto</p>
@@ -409,7 +409,7 @@ export default function DetalleOferta({ idOferta, onClose, onEditar }) {
                     {oferta.email_contacto_empresa && (
                       <div>
                         <p className="text-xs text-gray-600 font-bold uppercase mb-1">Email</p>
-                        <p className="text-blue-600 text-sm font-bold">{oferta.email_contacto_empresa}</p>
+                        <p className="text-gray-900 text-sm font-bold">{oferta.email_contacto_empresa}</p>
                       </div>
                     )}
                   </div>
@@ -420,11 +420,11 @@ export default function DetalleOferta({ idOferta, onClose, onEditar }) {
         </div>
 
         {/* Footer Fijo */}
-        <div className="border-t-2 bg-white px-6 py-4 rounded-b-xl flex-shrink-0">
+        <div className="border-t bg-white px-6 py-4 rounded-b-xl flex-shrink-0">
           <div className="flex flex-col sm:flex-row gap-3 mb-3">
             <button
               onClick={onClose}
-              className="flex-1 px-4 py-2.5 border-2 border-gray-400 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors font-semibold"
+              className="flex-1 px-4 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-semibold"
             >
               Cerrar
             </button>
@@ -434,7 +434,7 @@ export default function DetalleOferta({ idOferta, onClose, onEditar }) {
                   onClose();
                   onEditar(oferta);
                 }}
-                className="flex-1 px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-semibold flex items-center justify-center gap-2 shadow-md"
+                className="flex-1 px-4 py-2.5 bg-gray-800 text-white rounded-lg hover:bg-gray-900 transition-colors font-semibold flex items-center justify-center gap-2 shadow-md"
               >
                 <span>✏️</span>
                 <span>Editar</span>

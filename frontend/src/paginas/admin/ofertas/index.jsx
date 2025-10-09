@@ -1,5 +1,5 @@
 // 📁 UBICACIÓN: frontend/src/paginas/admin/ofertas/index.jsx
-// 🎯 Página principal para gestionar ofertas de práctica - VERSIÓN MEJORADA
+// 🎯 Página principal para gestionar ofertas de práctica - TEMA GRIS PROFESIONAL
 
 import { useState, useEffect } from 'react';
 import AdminLayout from '../../../components/layout/AdminLayout';
@@ -13,22 +13,16 @@ export default function OfertasPage() {
   const [filteredOfertas, setFilteredOfertas] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  
-  // Estados para filtros
   const [busqueda, setBusqueda] = useState('');
   const [filtroEstado, setFiltroEstado] = useState('');
   const [filtroEspecialidad, setFiltroEspecialidad] = useState('');
   const [filtroModalidad, setFiltroModalidad] = useState('');
-
-  // Estados para modales
   const [showModal, setShowModal] = useState(false);
   const [ofertaEditar, setOfertaEditar] = useState(null);
   const [showConfirmDelete, setShowConfirmDelete] = useState(false);
   const [ofertaEliminar, setOfertaEliminar] = useState(null);
   const [showDetalle, setShowDetalle] = useState(false);
   const [ofertaDetalle, setOfertaDetalle] = useState(null);
-
-  // Estadísticas
   const [stats, setStats] = useState({
     total_ofertas: 0,
     ofertas_activas: 0,
@@ -140,7 +134,7 @@ export default function OfertasPage() {
     switch (estado) {
       case 'activa': return 'bg-emerald-100 text-emerald-700 border border-emerald-200';
       case 'pausada': return 'bg-amber-100 text-amber-700 border border-amber-200';
-      case 'cerrada': return 'bg-slate-100 text-slate-700 border border-slate-200';
+      case 'cerrada': return 'bg-gray-100 text-gray-700 border border-gray-200';
       default: return 'bg-gray-100 text-gray-700 border border-gray-200';
     }
   };
@@ -161,8 +155,8 @@ export default function OfertasPage() {
       <AdminLayout>
         <div className="flex flex-col justify-center items-center h-64 space-y-4">
           <div className="relative">
-            <div className="w-16 h-16 border-4 border-blue-200 rounded-full animate-pulse"></div>
-            <div className="absolute top-0 left-0 w-16 h-16 border-4 border-blue-600 rounded-full animate-spin border-t-transparent"></div>
+            <div className="w-16 h-16 border-4 border-gray-200 rounded-full animate-pulse"></div>
+            <div className="absolute top-0 left-0 w-16 h-16 border-4 border-gray-600 rounded-full animate-spin border-t-transparent"></div>
           </div>
           <p className="text-gray-600 font-medium">Cargando ofertas...</p>
         </div>
@@ -173,76 +167,78 @@ export default function OfertasPage() {
   return (
     <AdminLayout>
       <div className="space-y-6 pb-8">
-        {/* Header con gradiente */}
-        <div className="bg-gradient-to-r from-blue-600 to-indigo-700 rounded-2xl shadow-xl p-8 text-white">
-          <div className="flex justify-between items-center">
+        {/* Header gris profesional */}
+        <div className="bg-gradient-to-r from-gray-800 via-gray-900 to-gray-800 rounded-xl shadow-xl p-8 text-white relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-yellow-600 opacity-5 rounded-full -mr-32 -mt-32"></div>
+          
+          <div className="flex justify-between items-center relative z-10">
             <div className="space-y-2">
               <h1 className="text-4xl font-bold flex items-center gap-3">
                 <span className="text-5xl">💼</span>
                 Ofertas de Práctica
               </h1>
-              <p className="text-blue-100 text-lg">
+              <p className="text-gray-300 text-lg">
                 Gestiona las oportunidades laborales para estudiantes
               </p>
             </div>
             <button
               onClick={handleNuevaOferta}
-              className="group px-6 py-3 bg-white text-blue-600 rounded-xl hover:bg-blue-50 transition-all duration-300 flex items-center space-x-3 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+              className="group px-6 py-3 bg-white text-gray-900 rounded-lg hover:bg-gray-100 transition-all flex items-center space-x-2 shadow-lg hover:shadow-xl"
             >
-              <span className="text-2xl group-hover:scale-110 transition-transform">➕</span>
+              <span className="text-xl group-hover:scale-110 transition-transform">➕</span>
               <span className="font-semibold">Nueva Oferta</span>
             </button>
           </div>
         </div>
 
-        {/* Estadísticas mejoradas */}
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
-          <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-2xl shadow-md border border-blue-200 p-6 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+        {/* Stats con colores sutiles */}
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-5 hover:shadow-md transition-all">
             <div className="flex items-center justify-between mb-2">
-              <p className="text-sm font-semibold text-blue-600 uppercase tracking-wide">Total Ofertas</p>
-              <span className="text-3xl">📊</span>
+              <p className="text-sm font-semibold text-gray-600 uppercase">Total</p>
+              <span className="text-2xl">📊</span>
             </div>
-            <p className="text-4xl font-bold text-blue-900">{stats.total_ofertas || 0}</p>
+            <p className="text-3xl font-bold text-gray-900">{stats.total_ofertas || 0}</p>
           </div>
           
-          <div className="bg-gradient-to-br from-emerald-50 to-emerald-100 rounded-2xl shadow-md border border-emerald-200 p-6 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-5 hover:shadow-md transition-all">
             <div className="flex items-center justify-between mb-2">
-              <p className="text-sm font-semibold text-emerald-600 uppercase tracking-wide">Activas</p>
-              <span className="text-3xl">✅</span>
+              <p className="text-sm font-semibold text-gray-600 uppercase">Activas</p>
+              <span className="text-2xl">✅</span>
             </div>
-            <p className="text-4xl font-bold text-emerald-900">{stats.ofertas_activas || 0}</p>
+            <p className="text-3xl font-bold text-emerald-600">{stats.ofertas_activas || 0}</p>
           </div>
           
-          <div className="bg-gradient-to-br from-amber-50 to-amber-100 rounded-2xl shadow-md border border-amber-200 p-6 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-5 hover:shadow-md transition-all">
             <div className="flex items-center justify-between mb-2">
-              <p className="text-sm font-semibold text-amber-600 uppercase tracking-wide">Pausadas</p>
-              <span className="text-3xl">⏸️</span>
+              <p className="text-sm font-semibold text-gray-600 uppercase">Pausadas</p>
+              <span className="text-2xl">⏸️</span>
             </div>
-            <p className="text-4xl font-bold text-amber-900">{stats.ofertas_pausadas || 0}</p>
+            <p className="text-3xl font-bold text-amber-600">{stats.ofertas_pausadas || 0}</p>
           </div>
           
-          <div className="bg-gradient-to-br from-slate-50 to-slate-100 rounded-2xl shadow-md border border-slate-200 p-6 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-5 hover:shadow-md transition-all">
             <div className="flex items-center justify-between mb-2">
-              <p className="text-sm font-semibold text-slate-600 uppercase tracking-wide">Cerradas</p>
-              <span className="text-3xl">🔒</span>
+              <p className="text-sm font-semibold text-gray-600 uppercase">Cerradas</p>
+              <span className="text-2xl">🔒</span>
             </div>
-            <p className="text-4xl font-bold text-slate-900">{stats.ofertas_cerradas || 0}</p>
+            <p className="text-3xl font-bold text-gray-600">{stats.ofertas_cerradas || 0}</p>
           </div>
           
-          <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-2xl shadow-md border border-purple-200 p-6 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-5 hover:shadow-md transition-all">
             <div className="flex items-center justify-between mb-2">
-              <p className="text-sm font-semibold text-purple-600 uppercase tracking-wide">Total Cupos</p>
-              <span className="text-3xl">🎯</span>
+              <p className="text-sm font-semibold text-gray-600 uppercase">Cupos</p>
+              <span className="text-2xl">🎯</span>
             </div>
-            <p className="text-4xl font-bold text-purple-900">{stats.total_cupos || 0}</p>
+            <p className="text-3xl font-bold text-gray-700">{stats.total_cupos || 0}</p>
           </div>
         </div>
 
-        {/* Filtros mejorados */}
-        <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6">
-          <div className="flex items-center gap-3 mb-4">
-            <span className="text-2xl">🔍</span>
-            <h2 className="text-xl font-bold text-gray-800">Filtros de Búsqueda</h2>
+        {/* Filtros limpios */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <div className="flex items-center gap-2 mb-4">
+            <span className="text-xl">🔍</span>
+            <h2 className="text-lg font-bold text-gray-900">Filtros de Búsqueda</h2>
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -252,28 +248,28 @@ export default function OfertasPage() {
                 placeholder="Buscar ofertas..."
                 value={busqueda}
                 onChange={(e) => setBusqueda(e.target.value)}
-                className="w-full pl-11 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-300"
+                className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-gray-500 transition-all"
               />
-              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-xl">🔎</span>
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-lg">🔎</span>
             </div>
 
             <select
               value={filtroEstado}
               onChange={(e) => setFiltroEstado(e.target.value)}
-              className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-300 appearance-none bg-white cursor-pointer"
+              className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-gray-500 transition-all bg-white"
             >
-              <option value="">📋 Todos los estados</option>
-              <option value="activa">✅ Activas</option>
-              <option value="pausada">⏸️ Pausadas</option>
-              <option value="cerrada">🔒 Cerradas</option>
+              <option value="">Todos los estados</option>
+              <option value="activa">Activas</option>
+              <option value="pausada">Pausadas</option>
+              <option value="cerrada">Cerradas</option>
             </select>
 
             <select
               value={filtroEspecialidad}
               onChange={(e) => setFiltroEspecialidad(e.target.value)}
-              className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-300 appearance-none bg-white cursor-pointer"
+              className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-gray-500 transition-all bg-white"
             >
-              <option value="">🎓 Todas las especialidades</option>
+              <option value="">Todas las especialidades</option>
               {especialidadesUnicas.map(esp => (
                 <option key={esp} value={esp}>{esp}</option>
               ))}
@@ -282,71 +278,52 @@ export default function OfertasPage() {
             <select
               value={filtroModalidad}
               onChange={(e) => setFiltroModalidad(e.target.value)}
-              className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-300 appearance-none bg-white cursor-pointer"
+              className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-gray-500 transition-all bg-white"
             >
-              <option value="">🏢 Todas las modalidades</option>
-              <option value="presencial">🏢 Presencial</option>
-              <option value="remoto">💻 Remoto</option>
-              <option value="hibrido">🔄 Híbrido</option>
+              <option value="">Todas las modalidades</option>
+              <option value="presencial">Presencial</option>
+              <option value="remoto">Remoto</option>
+              <option value="hibrido">Híbrido</option>
             </select>
           </div>
         </div>
 
-        {/* Mensajes de error */}
         {error && (
-          <div className="bg-red-50 border-2 border-red-200 rounded-xl p-4 flex items-center gap-3 animate-pulse">
+          <div className="bg-red-50 border-l-4 border-red-500 rounded-lg p-4 flex items-center gap-3">
             <span className="text-2xl">⚠️</span>
             <p className="text-red-700 font-medium">{error}</p>
           </div>
         )}
 
-        {/* Tabla mejorada */}
-        <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
+        {/* Tabla limpia */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
           {filteredOfertas.length === 0 ? (
             <div className="text-center py-20">
-              <span className="text-8xl mb-4 block">📭</span>
-              <p className="text-gray-500 text-xl font-medium">No se encontraron ofertas</p>
+              <span className="text-7xl mb-4 block">📭</span>
+              <p className="text-gray-500 text-lg font-medium">No se encontraron ofertas</p>
               <p className="text-gray-400 mt-2">Intenta ajustando los filtros de búsqueda</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gradient-to-r from-gray-50 to-gray-100">
+                <thead className="bg-gray-50">
                   <tr>
-                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                      Código
-                    </th>
-                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                      Título / Empresa
-                    </th>
-                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                      Especialidad
-                    </th>
-                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                      Modalidad
-                    </th>
-                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                      Cupos
-                    </th>
-                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                      Fechas
-                    </th>
-                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                      Estado
-                    </th>
-                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                      Postulaciones
-                    </th>
-                    <th className="px-6 py-4 text-right text-xs font-bold text-gray-700 uppercase tracking-wider">
-                      Acciones
-                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase">Código</th>
+                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase">Título / Empresa</th>
+                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase">Especialidad</th>
+                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase">Modalidad</th>
+                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase">Cupos</th>
+                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase">Fechas</th>
+                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase">Estado</th>
+                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase">Post.</th>
+                    <th className="px-6 py-4 text-right text-xs font-bold text-gray-700 uppercase">Acciones</th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-100">
-                  {filteredOfertas.map((oferta, index) => (
+                  {filteredOfertas.map((oferta) => (
                     <tr 
                       key={oferta.id_oferta} 
-                      className="hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 transition-all duration-200"
+                      className="hover:bg-gray-50 transition-colors"
                     >
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className="inline-flex items-center px-3 py-1 rounded-lg bg-gray-100 text-sm font-bold text-gray-800 border border-gray-200">
@@ -357,7 +334,7 @@ export default function OfertasPage() {
                         <div className="flex items-start gap-3">
                           <span className="text-2xl mt-1">💼</span>
                           <div>
-                            <p className="text-sm font-bold text-gray-900 hover:text-blue-600 transition-colors">
+                            <p className="text-sm font-semibold text-gray-900">
                               {oferta.titulo_oferta}
                             </p>
                             <p className="text-sm text-gray-500 flex items-center gap-1">
@@ -368,7 +345,7 @@ export default function OfertasPage() {
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="inline-flex items-center px-3 py-1 rounded-lg bg-blue-50 text-sm font-medium text-blue-700 border border-blue-100">
+                        <span className="inline-flex items-center px-3 py-1 rounded-lg bg-gray-100 text-sm font-medium text-gray-700 border border-gray-200">
                           <span className="mr-1">🎓</span>
                           {oferta.nombre_especialidad}
                         </span>
@@ -382,7 +359,7 @@ export default function OfertasPage() {
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="inline-flex items-center px-3 py-1 rounded-lg bg-purple-50 text-sm font-bold text-purple-700 border border-purple-100">
+                        <span className="inline-flex items-center px-3 py-1 rounded-lg bg-gray-100 text-sm font-bold text-gray-700 border border-gray-200">
                           <span className="mr-1">🎯</span>
                           {oferta.cupos_disponibles}
                         </span>
@@ -408,7 +385,7 @@ export default function OfertasPage() {
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-center">
-                        <span className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-blue-100 text-blue-700 font-bold border-2 border-blue-200">
+                        <span className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-gray-100 text-gray-700 font-bold border-2 border-gray-200">
                           {oferta.total_postulaciones || 0}
                         </span>
                       </td>
@@ -416,24 +393,24 @@ export default function OfertasPage() {
                         <div className="flex items-center justify-end gap-2">
                           <button
                             onClick={() => handleVerDetalle(oferta)}
-                            className="p-2 text-emerald-600 hover:bg-emerald-50 rounded-lg transition-all duration-200 transform hover:scale-110"
+                            className="p-2 text-emerald-600 hover:bg-emerald-50 rounded-lg transition-all"
                             title="Ver detalle"
                           >
-                            <span className="text-xl">👁️</span>
+                            <span className="text-lg">👁️</span>
                           </button>
                           <button
                             onClick={() => handleEditarOferta(oferta)}
-                            className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200 transform hover:scale-110"
+                            className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-all"
                             title="Editar"
                           >
-                            <span className="text-xl">✏️</span>
+                            <span className="text-lg">✏️</span>
                           </button>
                           <button
                             onClick={() => handleEliminarClick(oferta)}
-                            className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200 transform hover:scale-110"
+                            className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-all"
                             title="Eliminar"
                           >
-                            <span className="text-xl">🗑️</span>
+                            <span className="text-lg">🗑️</span>
                           </button>
                         </div>
                       </td>
@@ -441,21 +418,15 @@ export default function OfertasPage() {
                   ))}
                 </tbody>
               </table>
+
+              <div className="px-6 py-3 border-t bg-gray-50 text-sm text-gray-600">
+                Mostrando <span className="font-semibold">{filteredOfertas.length}</span> de <span className="font-semibold">{ofertas.length}</span> ofertas
+              </div>
             </div>
           )}
         </div>
-
-        {/* Footer informativo mejorado */}
-        <div className="flex items-center justify-center gap-4 text-sm">
-          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl px-6 py-3 shadow-sm">
-            <p className="text-gray-700 font-medium">
-              📊 Mostrando <span className="font-bold text-blue-600">{filteredOfertas.length}</span> de <span className="font-bold text-indigo-600">{ofertas.length}</span> ofertas
-            </p>
-          </div>
-        </div>
       </div>
 
-      {/* Modales */}
       {showModal && (
         <FormularioOferta
           oferta={ofertaEditar}
