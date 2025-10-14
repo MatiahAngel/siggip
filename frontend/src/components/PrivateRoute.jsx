@@ -19,9 +19,9 @@ const PrivateRoute = ({ children, roles }) => {
     );
   }
 
-  // Si no está autenticado, redirigir a login
+  // Si no está autenticado, redirigir a welcome
   if (!isAuthenticated) {
-    return <Navigate to="/login" replace />;
+    return <Navigate to="/welcome" replace />;
   }
 
   // Si se especifican roles, verificar que el usuario tenga uno de ellos
