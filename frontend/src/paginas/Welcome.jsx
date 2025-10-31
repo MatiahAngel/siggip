@@ -1,5 +1,6 @@
 // 📁 UBICACIÓN: frontend/src/paginas/Welcome.jsx
-// 🎯 PROPÓSITO: Página de bienvenida estilo INACAP con hero banner
+// 🎯 PROPÓSITO: Página de bienvenida con accesos diferenciados por rol
+// ✅ ACTUALIZADO: Ruta de login para profesores
 
 import { useNavigate } from 'react-router-dom';
 
@@ -40,6 +41,17 @@ export default function Welcome() {
       hoverGradient: 'hover:from-red-700 hover:to-red-800'
     }
   ];
+
+  const handleRoleClick = (roleId) => {
+    // Rutas específicas por rol
+    if (roleId === 'estudiante') {
+      navigate('/login/estudiante');
+    } else if (roleId === 'profesor') {
+      navigate('/login/profesor');
+    } else {
+      navigate('/login', { state: { userType: roleId } });
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -125,14 +137,7 @@ export default function Welcome() {
             {userRoles.map((role) => (
               <div
                 key={role.id}
-                onClick={() => {
-                  // Estudiantes van a login con RUT, otros a login con email
-                  if (role.id === 'estudiante') {
-                    navigate('/login/estudiante');
-                  } else {
-                    navigate('/login', { state: { userType: role.id } });
-                  }
-                }}
+                onClick={() => handleRoleClick(role.id)}
                 className={`bg-gradient-to-br ${role.gradient} ${role.hoverGradient} rounded-2xl p-8 text-white cursor-pointer transform transition-all duration-300 hover:scale-105 hover:shadow-2xl`}
               >
                 <div className="text-5xl mb-4">{role.icon}</div>

@@ -6,6 +6,7 @@ import empresas from './v1/empresas.js';
 import especialidades from './v1/especialidades.js';
 import ofertas from './v1/ofertas.js';
 import estudiantesRoutes from './v1/estudiantes.js';
+import profesores from './v1/profesores.js';
 const r = Router();
 
 r.use('/salud', salud);
@@ -15,5 +16,6 @@ r.use('/empresas', empresas);
 r.use('/especialidades', especialidades);
 r.use('/ofertas', ofertas);
 r.use('/estudiantes', estudiantesRoutes);
+r.use('/profesores', profesores);
 
 export default r;

@@ -1,5 +1,5 @@
 // 📁 UBICACIÓN: frontend/src/App.jsx
-// 🎯 ACTUALIZACIÓN: Dashboard estudiante real
+// 🎯 ACTUALIZACIÓN: Login y Dashboard de profesor agregados
 
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
@@ -7,11 +7,13 @@ import PrivateRoute from './components/PrivateRoute';
 import Welcome from './paginas/Welcome';
 import Login from './paginas/autenticacion/Login';
 import LoginEstudiante from './paginas/autenticacion/LoginEstudiante';
+import LoginProfesor from './paginas/autenticacion/LoginProfesor';
 import Dashboard from './paginas/admin/Dashboard';
 import ListaUsuarios from './paginas/admin/usuarios/ListaUsuarios';
 import Empresas from './paginas/admin/empresas/index';
 import ListaEspecialidades from './paginas/admin/especialidades/ListaEspecialidades';
 import ListaOfertas from './paginas/admin/ofertas';
+import DashboardProfesor from './paginas/profesor/DashboardProfesor';
 import DashboardEstudiante from './paginas/estudiante/DashboardEstudiante';
 
 const TempPage = ({ title }) => (
@@ -42,19 +44,33 @@ function App() {
     <Router>
       <AuthProvider>
         <Routes>
+          {/* Rutas Públicas */}
           <Route path="/" element={<Welcome />} />
           <Route path="/welcome" element={<Welcome />} />
-          <Route path="/login/estudiante" element={<LoginEstudiante />} />
+          
+          {/* Rutas de Login */}
           <Route path="/login" element={<Login />} />
+          <Route path="/login/estudiante" element={<LoginEstudiante />} />
+          <Route path="/login/profesor" element={<LoginProfesor />} />
+          
+          {/* Rutas Admin */}
           <Route path="/admin/dashboard" element={<PrivateRoute roles={['administrador', 'directivo']}><Dashboard /></PrivateRoute>} />
           <Route path="/admin/usuarios" element={<PrivateRoute roles={['administrador', 'directivo']}><ListaUsuarios /></PrivateRoute>} />
           <Route path="/admin/empresas" element={<PrivateRoute roles={['administrador', 'directivo']}><Empresas /></PrivateRoute>} />
           <Route path="/admin/especialidades" element={<PrivateRoute roles={['administrador', 'directivo']}><ListaEspecialidades /></PrivateRoute>} />
           <Route path="/admin/ofertas" element={<PrivateRoute roles={['administrador', 'directivo']}><ListaOfertas /></PrivateRoute>} />
           <Route path="/admin/reportes" element={<PrivateRoute roles={['administrador', 'directivo']}><TempPage title="Reportes" /></PrivateRoute>} />
-          <Route path="/profesor/dashboard" element={<PrivateRoute roles="profesor"><TempPage title="Dashboard Profesor" /></PrivateRoute>} />
-          <Route path="/estudiante/dashboard" element={<PrivateRoute roles="estudiante"><DashboardEstudiante /></PrivateRoute>} />
-          <Route path="/empresa/dashboard" element={<PrivateRoute roles="empresa"><TempPage title="Dashboard Empresa" /></PrivateRoute>} />
+          
+          {/* Rutas Profesor */}
+          <Route path="/profesor/dashboard" element={<PrivateRoute roles={['profesor']}><DashboardProfesor /></PrivateRoute>} />
+          
+          {/* Rutas Estudiante */}
+          <Route path="/estudiante/dashboard" element={<PrivateRoute roles={['estudiante']}><DashboardEstudiante /></PrivateRoute>} />
+          
+          {/* Rutas Empresa */}
+          <Route path="/empresa/dashboard" element={<PrivateRoute roles={['empresa']}><TempPage title="Dashboard Empresa" /></PrivateRoute>} />
+          
+          {/* 404 */}
           <Route path="*" element={<NotFound />} />
         </Routes>
       </AuthProvider>
