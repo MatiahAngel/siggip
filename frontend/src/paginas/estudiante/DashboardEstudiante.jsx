@@ -840,51 +840,94 @@ function PostulacionCardDetallada({ postulacion, onCancelar, cancelando }) {
 function SeccionInicio({ perfil, estadisticas, practicaActual, calcularProgreso, ofertas, postulaciones, abrirDetallePractica, abrirSubirInforme, abrirBitacora, abrirModalPostulacion, setActiveSection, onCancelarPostulacion, cancelandoPostulacion }) {
   return (
     <>
+      {/* BANNER DE BIENVENIDA MEJORADO */}
       <div className="relative bg-gradient-to-br from-yellow-500 via-orange-500 to-red-600 rounded-3xl p-8 md:p-12 overflow-hidden shadow-2xl">
-        <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iMC4xIj48cGF0aCBkPSJNMzYgMzRjMy4zMTQgMCA2LTIuNjg2IDYtNnMtMi42ODYtNi02LTYtNiAyLjY4Ni02IDYgMi42ODYgNiA2IDZ6Ii8+PC9nPjwvZz48L3N2Zz4=')] opacity-20"></div>
+        {/* Patrón animado de fondo */}
+        <div className="absolute inset-0 opacity-20">
+          <div className="absolute top-0 left-0 w-72 h-72 bg-white rounded-full -translate-x-36 -translate-y-36 animate-pulse"></div>
+          <div className="absolute bottom-0 right-0 w-96 h-96 bg-white rounded-full translate-x-48 translate-y-48 animate-pulse" style={{ animationDelay: '0.5s' }}></div>
+        </div>
         
         <div className="relative z-10">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="px-4 py-2 bg-white/20 backdrop-blur rounded-full">
-              <p className="text-white font-bold text-sm">👋 Bienvenido de nuevo</p>
-            </div>
+          {/* Badge de bienvenida */}
+          <div className="inline-flex items-center gap-3 px-6 py-3 bg-white/20 backdrop-blur-xl rounded-full mb-6 shadow-xl">
+            <span className="text-3xl animate-wave">👋</span>
+            <p className="text-white font-black text-lg">Bienvenido de nuevo</p>
           </div>
           
-          <h2 className="text-4xl md:text-5xl font-black text-white mb-4">
-            ¡Hola, {perfil?.nombre}!
-          </h2>
-          <p className="text-xl text-white/90 mb-8">
-            {perfil?.nombre_especialidad} • {perfil?.nivel_academico}
-          </p>
+          {/* Nombre y especialidad */}
+          <div className="mb-8">
+            <h2 className="text-5xl md:text-6xl font-black text-white mb-4 drop-shadow-2xl">
+              ¡Hola, {perfil?.nombre}!
+            </h2>
+            <div className="flex flex-wrap items-center gap-4 text-white/90 text-lg">
+              <span className="px-5 py-2 bg-white/20 backdrop-blur-xl rounded-full font-bold flex items-center gap-2 shadow-lg hover:bg-white/30 transition">
+                <span className="text-xl">🎓</span> {perfil?.nombre_especialidad}
+              </span>
+              <span className="px-5 py-2 bg-white/20 backdrop-blur-xl rounded-full font-bold flex items-center gap-2 shadow-lg hover:bg-white/30 transition">
+                <span className="text-xl">📚</span> {perfil?.nivel_academico}
+              </span>
+            </div>
+          </div>
 
+          {/* Stats mejoradas con animaciones */}
           <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-            <QuickStat icon="💼" value={estadisticas?.practicas_en_curso || 0} label="En Curso" />
-            <QuickStat icon="⏱️" value={estadisticas?.horas_completadas || 0} label="Horas" />
-            <QuickStat icon="📨" value={estadisticas?.postulaciones_activas || 0} label="Postulaciones" />
-            <QuickStat icon="📋" value={estadisticas?.informes_aprobados || 0} label="Informes OK" />
-            <QuickStat icon="🏆" value={estadisticas?.practicas_completadas || 0} label="Completadas" />
+            <QuickStatMejorado 
+              icon="💼" 
+              value={estadisticas?.practicas_en_curso || 0} 
+              label="En Curso"
+              color="from-blue-500 to-cyan-500"
+            />
+            <QuickStatMejorado 
+              icon="⏱️" 
+              value={`${estadisticas?.horas_completadas || 0}h`} 
+              label="Horas"
+              color="from-purple-500 to-pink-500"
+            />
+            <QuickStatMejorado 
+              icon="📨" 
+              value={estadisticas?.postulaciones_activas || 0} 
+              label="Postulaciones"
+              color="from-emerald-500 to-teal-500"
+            />
+            <QuickStatMejorado 
+              icon="📋" 
+              value={estadisticas?.informes_aprobados || 0} 
+              label="Informes"
+              color="from-orange-500 to-red-500"
+            />
+            <QuickStatMejorado 
+              icon="🏆" 
+              value={estadisticas?.practicas_completadas || 0} 
+              label="Completadas"
+              color="from-yellow-500 to-amber-500"
+            />
           </div>
         </div>
       </div>
 
-      <div className="bg-white rounded-3xl shadow-xl p-6">
-        <h3 className="text-2xl font-black text-gray-900 mb-6">📊 Mis Indicadores</h3>
-        <div className="grid md:grid-cols-3 gap-6">
-          <KPICard
+      {/* KPIs MEJORADOS */}
+      <div className="bg-white rounded-3xl shadow-xl p-8">
+        <h3 className="text-3xl font-black text-gray-900 mb-8 flex items-center gap-3">
+          <span className="text-4xl">📊</span>
+          Mis Indicadores de Desempeño
+        </h3>
+        <div className="grid md:grid-cols-3 gap-8">
+          <KPICardMejorado
             titulo="Cobertura de Prácticas"
             valor={`${estadisticas?.practicas_en_curso || 0}/${estadisticas?.practicas_requeridas || 1}`}
             porcentaje={Math.round(((estadisticas?.practicas_en_curso || 0) / (estadisticas?.practicas_requeridas || 1)) * 100)}
             color="blue"
             icono="📊"
           />
-          <KPICard
+          <KPICardMejorado
             titulo="Informes Validados"
             valor={`${estadisticas?.informes_aprobados || 0}/3`}
             porcentaje={Math.round(((estadisticas?.informes_aprobados || 0) / 3) * 100)}
             color="purple"
             icono="📝"
           />
-          <KPICard
+          <KPICardMejorado
             titulo="Tasa de Aceptación"
             valor={`${estadisticas?.tasa_aceptacion || 0}%`}
             porcentaje={estadisticas?.tasa_aceptacion || 0}
@@ -894,9 +937,9 @@ function SeccionInicio({ perfil, estadisticas, practicaActual, calcularProgreso,
         </div>
       </div>
 
+      {/* Resto del código igual... */}
       {practicaActual ? (
         <>
-          {/* ✅ Mostrar práctica actual */}
           <PracticaActualCard 
             practica={practicaActual}
             calcularProgreso={calcularProgreso}
@@ -905,7 +948,6 @@ function SeccionInicio({ perfil, estadisticas, practicaActual, calcularProgreso,
             abrirBitacora={abrirBitacora}
           />
 
-          {/* ✅ NUEVO: Aviso de que NO puede buscar más ofertas */}
           <div className="bg-gradient-to-br from-blue-50 to-purple-50 rounded-3xl p-8 border-2 border-blue-200">
             <div className="flex items-center gap-4">
               <div className="w-16 h-16 bg-blue-500 rounded-full flex items-center justify-center text-3xl">
@@ -925,7 +967,6 @@ function SeccionInicio({ perfil, estadisticas, practicaActual, calcularProgreso,
         </>
       ) : (
         <>
-          {/* ✅ SI NO TIENE PRÁCTICA: Mostrar ofertas */}
           <div className="bg-gradient-to-br from-emerald-500 to-teal-600 rounded-3xl p-8 md:p-12 text-white shadow-2xl">
             <div className="flex items-center justify-between flex-wrap gap-6">
               <div className="flex-1">
@@ -945,7 +986,6 @@ function SeccionInicio({ perfil, estadisticas, practicaActual, calcularProgreso,
             </div>
           </div>
 
-          {/* ✅ Mostrar ofertas destacadas */}
           <div className="grid lg:grid-cols-3 gap-8">
             <div className="lg:col-span-2 bg-white rounded-3xl shadow-xl p-6">
               <div className="flex items-center justify-between mb-6">
@@ -963,7 +1003,7 @@ function SeccionInicio({ perfil, estadisticas, practicaActual, calcularProgreso,
 
               <div className="space-y-4">
                 {ofertas.slice(0, 4).map(oferta => (
-                  <OfertaCard 
+                  <OfertaCardMejorada 
                     key={oferta.id_oferta} 
                     oferta={oferta} 
                     onPostular={abrirModalPostulacion}
@@ -972,7 +1012,6 @@ function SeccionInicio({ perfil, estadisticas, practicaActual, calcularProgreso,
               </div>
             </div>
 
-            {/* Mis Postulaciones */}
             <div className="bg-white rounded-3xl shadow-xl p-6">
               <div className="flex items-center justify-between mb-6">
                 <h3 className="text-2xl font-black text-gray-900">Mis Postulaciones</h3>
@@ -1010,98 +1049,536 @@ function SeccionInicio({ perfil, estadisticas, practicaActual, calcularProgreso,
 }
 
 // ============ PRÁCTICA ACTUAL CARD ============
+// ============ PRÁCTICA ACTUAL CARD MEJORADA ============
+// ============ PRÁCTICA ACTUAL CARD - VERSIÓN PROFESIONAL COMPLETA Y MEJORADA ============
+// 🎯 Sin requisitos, con diseño más profesional y funcional
+// 📋 Reemplaza COMPLETAMENTE tu función PracticaActualCard con esta versión
+
 function PracticaActualCard({ practica, calcularProgreso, abrirDetallePractica, abrirSubirInforme, abrirBitacora }) {
+  const [copiedEmail, setCopiedEmail] = useState(false);
+  const [copiedTelefono, setCopiedTelefono] = useState(false);
+  const [copiedEmailProf, setCopiedEmailProf] = useState(false);
+  const [copiedTelProf, setCopiedTelProf] = useState(false);
+  
   const progreso = calcularProgreso(practica);
   
+  const diasTranscurridos = Math.floor(
+    (new Date() - new Date(practica.fecha_inicio_practica)) / (1000 * 60 * 60 * 24)
+  );
+  const diasTotales = Math.floor(
+    (new Date(practica.fecha_termino_practica) - new Date(practica.fecha_inicio_practica)) / (1000 * 60 * 60 * 24)
+  );
+  const diasRestantes = diasTotales - diasTranscurridos;
+
+  const handleCopy = (text, setter) => {
+    navigator.clipboard.writeText(text);
+    setter(true);
+    setTimeout(() => setter(false), 2000);
+  };
+  
   return (
-    <div className="bg-white rounded-3xl shadow-xl overflow-hidden">
-      <div className="bg-gradient-to-r from-blue-500 to-purple-600 p-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-blue-100 text-sm font-semibold mb-1">TU PRÁCTICA ACTUAL</p>
-            <h3 className="text-2xl font-black text-white">{practica.titulo_oferta}</h3>
+    <div className="bg-white rounded-3xl shadow-2xl overflow-hidden">
+      {/* 🎯 HEADER MEJORADO con Barra de Progreso Grande */}
+      <div className="bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 p-8">
+        <div className="flex items-start justify-between gap-4 mb-6">
+          <div className="flex-1">
+            <div className="flex items-center gap-2 mb-3 flex-wrap">
+              <span className="px-4 py-2 bg-white/20 backdrop-blur rounded-full text-sm font-bold text-white flex items-center gap-2">
+                <span>⚡</span> PRÁCTICA EN CURSO
+              </span>
+              <span className="px-4 py-2 bg-emerald-500/90 backdrop-blur rounded-full text-sm font-bold text-white">
+                {progreso}% Completado
+              </span>
+              <EstadoPracticaBadge estado={practica.estado_practica} />
+            </div>
+            
+            <h3 className="text-3xl md:text-4xl font-black text-white mb-3">
+              {practica.titulo_oferta}
+            </h3>
+            
+            <div className="flex flex-wrap items-center gap-6 text-white/90">
+              <span className="flex items-center gap-2 text-base">
+                <span className="text-2xl">🏢</span>
+                <span className="font-semibold">{practica.empresa_nombre}</span>
+              </span>
+              <span className="flex items-center gap-2 text-base">
+                <span className="text-2xl">📍</span>
+                <span>{practica.ubicacion || practica.comuna || 'No especificado'}</span>
+              </span>
+              <span className="flex items-center gap-2 text-base">
+                <span className="text-2xl">⏰</span>
+                <span className="font-bold">{practica.horas_completadas}h / {practica.horas_requeridas}h</span>
+              </span>
+            </div>
           </div>
-          <div className="w-16 h-16 bg-white/20 backdrop-blur rounded-2xl flex items-center justify-center">
-            <span className="text-3xl">💼</span>
+          
+          {/* Botón Rápido Bitácora MEJORADO */}
+          <button
+            onClick={() => abrirBitacora(practica)}
+            className="px-6 py-4 bg-white text-purple-600 rounded-2xl font-bold hover:bg-white/90 transition shadow-2xl flex items-center gap-2 flex-shrink-0 hover:scale-105"
+          >
+            <span className="text-2xl">📔</span>
+            <span className="hidden sm:inline">Bitácora</span>
+          </button>
+        </div>
+
+        {/* Barra de progreso animada y grande */}
+        <div className="relative">
+          <div className="flex items-center justify-between text-white text-sm font-bold mb-2">
+            <span>Progreso General de la Práctica</span>
+            <span>{progreso}% • {diasRestantes > 0 ? `${diasRestantes} días restantes` : 'Finalizado'}</span>
+          </div>
+          <div className="h-5 bg-white/20 rounded-full overflow-hidden backdrop-blur">
+            <div 
+              className="h-full bg-gradient-to-r from-emerald-400 via-teal-400 to-cyan-400 rounded-full transition-all duration-1000 relative overflow-hidden"
+              style={{ width: `${progreso}%` }}
+            >
+              {/* Efecto de brillo animado */}
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-shimmer"></div>
+            </div>
+          </div>
+          <div className="flex justify-between text-white/70 text-xs mt-2 font-semibold">
+            <span>📅 {new Date(practica.fecha_inicio_practica).toLocaleDateString('es-CL', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+            <span>🎯 {new Date(practica.fecha_termino_practica).toLocaleDateString('es-CL', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
           </div>
         </div>
       </div>
 
-      <div className="p-6 md:p-8">
-        <div className="grid md:grid-cols-2 gap-8">
-          <div className="space-y-6">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
-                <span className="text-2xl">🏢</span>
-              </div>
-              <div>
-                <p className="text-sm text-gray-600">Empresa</p>
-                <p className="font-bold text-gray-900">{practica.empresa_nombre}</p>
-              </div>
+      <div className="p-6 md:p-8 space-y-8">
+        {/* 🏢 INFORMACIÓN DE LA EMPRESA - SUPER MEJORADA */}
+        <div className="bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 rounded-3xl p-8 border-2 border-blue-300 shadow-xl relative overflow-hidden">
+          {/* Círculo decorativo de fondo */}
+          <div className="absolute -top-10 -right-10 w-40 h-40 bg-gradient-to-br from-blue-400 to-indigo-500 rounded-full opacity-10 blur-3xl"></div>
+          
+          {/* Header Empresa MEJORADO */}
+          <div className="relative flex items-center gap-6 mb-8 pb-6 border-b-2 border-blue-200">
+            <div className="w-24 h-24 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-3xl flex items-center justify-center shadow-2xl flex-shrink-0 hover:scale-110 transition">
+              <span className="text-6xl">🏢</span>
             </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <InfoCard icon="📅" label="Inicio" value={new Date(practica.fecha_inicio_practica).toLocaleDateString('es-CL')} />
-              <InfoCard icon="🎯" label="Término" value={new Date(practica.fecha_termino_practica).toLocaleDateString('es-CL')} />
+            <div className="flex-1 min-w-0">
+              <h4 className="text-3xl font-black text-gray-900 mb-2 break-words">
+                {practica.empresa_nombre}
+              </h4>
+              {practica.nombre_comercial && practica.nombre_comercial !== practica.empresa_nombre && (
+                <p className="text-base text-gray-600 italic mb-2">({practica.nombre_comercial})</p>
+              )}
+              {practica.sector_economico && (
+                <div className="flex items-center gap-2 mt-2">
+                  <span className="px-4 py-2 bg-indigo-100 text-indigo-700 rounded-full text-sm font-bold flex items-center gap-2 shadow-md">
+                    <span>📊</span> {practica.sector_economico}
+                  </span>
+                </div>
+              )}
             </div>
-
-            {practica.profesor_nombre && (
-              <div className="p-4 bg-gradient-to-r from-purple-50 to-blue-50 rounded-xl">
-                <p className="text-xs text-gray-600 font-semibold mb-1">PROFESOR GUÍA</p>
-                <p className="font-bold text-gray-900">{practica.profesor_nombre} {practica.profesor_apellido}</p>
-              </div>
-            )}
           </div>
 
-          <div className="flex flex-col items-center justify-center">
-            <div className="relative w-48 h-48 mb-6">
-              <svg className="transform -rotate-90 w-48 h-48">
-                <circle cx="96" cy="96" r="88" stroke="#e5e7eb" strokeWidth="12" fill="none" />
-                <circle cx="96" cy="96" r="88" stroke="url(#grad1)" strokeWidth="12" fill="none" strokeDasharray={`${progreso * 5.53} 553`} strokeLinecap="round" />
+          {/* Grid de Información - Diseño Premium */}
+          <div className="grid md:grid-cols-2 gap-5">
+            {/* Columna 1: Ubicación y Modalidad */}
+            <div className="space-y-4">
+              {/* Ubicación */}
+              <div className="p-5 bg-white rounded-2xl border-2 border-gray-200 shadow-md hover:shadow-xl hover:border-blue-300 transition group">
+                <div className="flex items-start gap-4">
+                  <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center flex-shrink-0 group-hover:bg-blue-200 transition">
+                    <span className="text-3xl">📍</span>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs text-gray-600 font-bold mb-2 uppercase tracking-wide">Ubicación</p>
+                    <p className="font-black text-gray-900 text-lg leading-tight">
+                      {practica.ubicacion || practica.direccion_empresa || 'No especificada'}
+                    </p>
+                    {practica.comuna && practica.region && (
+                      <p className="text-sm text-gray-600 mt-2 flex items-center gap-1">
+                        <span>🏙️</span> {practica.comuna}, {practica.region}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Modalidad */}
+              <div className="p-5 bg-white rounded-2xl border-2 border-gray-200 shadow-md hover:shadow-xl hover:border-purple-300 transition group">
+                <div className="flex items-start gap-4">
+                  <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center flex-shrink-0 group-hover:bg-purple-200 transition">
+                    <span className="text-3xl">💼</span>
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-xs text-gray-600 font-bold mb-2 uppercase tracking-wide">Modalidad de Trabajo</p>
+                    <p className="font-black text-gray-900 text-lg capitalize">
+                      {practica.modalidad_trabajo || 'Presencial'}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Horario */}
+              {practica.horario_trabajo && (
+                <div className="p-5 bg-white rounded-2xl border-2 border-gray-200 shadow-md hover:shadow-xl hover:border-orange-300 transition group">
+                  <div className="flex items-start gap-4">
+                    <div className="w-12 h-12 bg-orange-100 rounded-xl flex items-center justify-center flex-shrink-0 group-hover:bg-orange-200 transition">
+                      <span className="text-3xl">🕐</span>
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-xs text-gray-600 font-bold mb-2 uppercase tracking-wide">Horario</p>
+                      <p className="font-black text-gray-900 text-lg">{practica.horario_trabajo}</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Columna 2: Contacto */}
+            <div className="space-y-4">
+              {/* Teléfono */}
+              {practica.telefono_empresa && (
+                <div className="p-5 bg-white rounded-2xl border-2 border-gray-200 shadow-md hover:shadow-xl hover:border-green-300 transition group">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex items-start gap-4 flex-1">
+                      <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center flex-shrink-0 group-hover:bg-green-200 transition">
+                        <span className="text-3xl">📞</span>
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-xs text-gray-600 font-bold mb-2 uppercase tracking-wide">Teléfono</p>
+                        <p className="font-black text-gray-900 text-lg">{practica.telefono_empresa}</p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => handleCopy(practica.telefono_empresa, setCopiedTelefono)}
+                      className="p-3 hover:bg-gray-100 rounded-xl transition flex-shrink-0 group"
+                      title="Copiar teléfono"
+                    >
+                      <span className="text-2xl">{copiedTelefono ? '✅' : '📋'}</span>
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Email */}
+              {practica.email_empresa && (
+                <div className="p-5 bg-white rounded-2xl border-2 border-gray-200 shadow-md hover:shadow-xl hover:border-blue-300 transition group">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex items-start gap-4 flex-1 min-w-0">
+                      <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center flex-shrink-0 group-hover:bg-blue-200 transition">
+                        <span className="text-3xl">✉️</span>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs text-gray-600 font-bold mb-2 uppercase tracking-wide">Correo Electrónico</p>
+                        <p className="font-bold text-gray-900 text-sm break-all">{practica.email_empresa}</p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => handleCopy(practica.email_empresa, setCopiedEmail)}
+                      className="p-3 hover:bg-gray-100 rounded-xl transition flex-shrink-0"
+                      title="Copiar email"
+                    >
+                      <span className="text-2xl">{copiedEmail ? '✅' : '📋'}</span>
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Salario */}
+              {practica.salario_referencial && (
+                <div className="p-5 bg-gradient-to-br from-emerald-50 to-teal-50 rounded-2xl border-2 border-emerald-300 shadow-lg hover:shadow-2xl transition">
+                  <div className="flex items-start gap-4">
+                    <div className="w-12 h-12 bg-emerald-500 rounded-xl flex items-center justify-center flex-shrink-0 shadow-md">
+                      <span className="text-3xl">💰</span>
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-xs text-gray-600 font-bold mb-2 uppercase tracking-wide">Remuneración Referencial</p>
+                      <p className="font-black text-emerald-700 text-2xl">
+                        ${Number(practica.salario_referencial).toLocaleString('es-CL')}
+                      </p>
+                      <p className="text-xs text-gray-600 mt-1">Monto referencial mensual</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Beneficios */}
+          {practica.beneficios && (
+            <div className="mt-6 p-6 bg-white rounded-2xl border-2 border-emerald-200 shadow-md">
+              <div className="flex items-start gap-4">
+                <div className="w-12 h-12 bg-emerald-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                  <span className="text-3xl">🎁</span>
+                </div>
+                <div className="flex-1">
+                  <p className="text-xs text-gray-600 font-bold mb-2 uppercase tracking-wide">Beneficios Adicionales</p>
+                  <p className="text-gray-900 leading-relaxed">{practica.beneficios}</p>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* 👨‍🏫 PROFESOR GUÍA - SUPER MEJORADO */}
+        {practica.profesor_nombre && (
+          <div className="bg-gradient-to-br from-purple-50 via-pink-50 to-red-50 rounded-3xl p-8 border-2 border-purple-300 shadow-xl relative overflow-hidden">
+            {/* Círculo decorativo de fondo */}
+            <div className="absolute -top-10 -left-10 w-40 h-40 bg-gradient-to-br from-purple-400 to-pink-500 rounded-full opacity-10 blur-3xl"></div>
+            
+            {/* Header Profesor MEJORADO */}
+            <div className="relative flex items-center gap-6 mb-8 pb-6 border-b-2 border-purple-200">
+              <div className="w-24 h-24 bg-gradient-to-br from-purple-600 to-pink-600 rounded-full flex items-center justify-center shadow-2xl flex-shrink-0 hover:scale-110 transition">
+                <span className="text-5xl font-black text-white">
+                  {practica.profesor_nombre?.charAt(0)}{practica.profesor_apellido?.charAt(0)}
+                </span>
+              </div>
+              <div className="flex-1 min-w-0">
+                <h4 className="text-3xl font-black text-gray-900 mb-1 break-words">
+                  {practica.profesor_nombre} {practica.profesor_apellido}
+                  {practica.profesor_apellido_materno && ` ${practica.profesor_apellido_materno}`}
+                </h4>
+                <p className="text-purple-600 font-bold text-lg flex items-center gap-2">
+                  <span>👨‍🏫</span> Profesor Guía
+                </p>
+              </div>
+            </div>
+
+            {/* Grid de Información */}
+            <div className="grid md:grid-cols-2 gap-5">
+              {/* Email */}
+              {practica.profesor_email && (
+                <div className="p-5 bg-white rounded-2xl border-2 border-gray-200 shadow-md hover:shadow-xl hover:border-purple-300 transition group">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex items-start gap-4 flex-1 min-w-0">
+                      <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center flex-shrink-0 group-hover:bg-purple-200 transition">
+                        <span className="text-3xl">✉️</span>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs text-gray-600 font-bold mb-2 uppercase tracking-wide">Correo Electrónico</p>
+                        <p className="font-bold text-gray-900 text-sm break-all">{practica.profesor_email}</p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => handleCopy(practica.profesor_email, setCopiedEmailProf)}
+                      className="p-3 hover:bg-gray-100 rounded-xl transition flex-shrink-0"
+                      title="Copiar email"
+                    >
+                      <span className="text-2xl">{copiedEmailProf ? '✅' : '📋'}</span>
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Teléfono */}
+              {practica.profesor_telefono && (
+                <div className="p-5 bg-white rounded-2xl border-2 border-gray-200 shadow-md hover:shadow-xl hover:border-purple-300 transition group">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex items-start gap-4 flex-1">
+                      <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center flex-shrink-0 group-hover:bg-purple-200 transition">
+                        <span className="text-3xl">📞</span>
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-xs text-gray-600 font-bold mb-2 uppercase tracking-wide">Teléfono</p>
+                        <p className="font-black text-gray-900 text-lg">{practica.profesor_telefono}</p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => handleCopy(practica.profesor_telefono, setCopiedTelProf)}
+                      className="p-3 hover:bg-gray-100 rounded-xl transition flex-shrink-0"
+                      title="Copiar teléfono"
+                    >
+                      <span className="text-2xl">{copiedTelProf ? '✅' : '📋'}</span>
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Nota informativa mejorada */}
+            <div className="mt-6 p-5 bg-purple-100 rounded-2xl border-l-4 border-purple-600 shadow-md">
+              <div className="flex items-start gap-3">
+                <span className="text-3xl">💡</span>
+                <div className="flex-1">
+                  <p className="text-sm text-purple-900 leading-relaxed">
+                    <strong className="font-black">Importante:</strong> Tu profesor guía está disponible para resolver dudas sobre tu práctica, revisar tu bitácora y validar tus informes de avance.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Horario de atención NUEVO */}
+            <div className="mt-4 p-5 bg-white rounded-2xl border-2 border-purple-200 shadow-md">
+              <div className="flex items-start gap-4">
+                <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                  <span className="text-3xl">🕐</span>
+                </div>
+                <div className="flex-1">
+                  <p className="text-xs text-gray-600 font-bold mb-2 uppercase tracking-wide">Horario de Atención</p>
+                  <p className="text-gray-900 font-semibold mb-1">Lunes a Viernes: 09:00 - 18:00 hrs</p>
+                  <p className="text-xs text-gray-600">💬 Responde consultas en un plazo de 24-48 horas hábiles</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* 📊 PROGRESO Y CRONOGRAMA - REDISEÑADO */}
+        <div className="grid md:grid-cols-2 gap-8">
+          {/* Progreso Circular Mejorado */}
+          <div className="flex flex-col items-center justify-center p-8 bg-gradient-to-br from-emerald-50 to-teal-50 rounded-3xl border-2 border-emerald-300 shadow-xl">
+            <div className="relative w-52 h-52 mb-6">
+              <svg className="transform -rotate-90 w-52 h-52">
+                {/* Círculo de fondo */}
+                <circle cx="104" cy="104" r="90" stroke="#e5e7eb" strokeWidth="16" fill="none" />
+                {/* Círculo de progreso con gradiente */}
+                <circle 
+                  cx="104" 
+                  cy="104" 
+                  r="90" 
+                  stroke="url(#gradProgress)" 
+                  strokeWidth="16" 
+                  fill="none" 
+                  strokeDasharray={`${progreso * 5.65} 565`} 
+                  strokeLinecap="round"
+                  className="transition-all duration-1000"
+                />
                 <defs>
-                  <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" stopColor="#3b82f6" />
-                    <stop offset="100%" stopColor="#8b5cf6" />
+                  <linearGradient id="gradProgress" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stopColor="#10b981" />
+                    <stop offset="50%" stopColor="#14b8a6" />
+                    <stop offset="100%" stopColor="#06b6d4" />
                   </linearGradient>
                 </defs>
               </svg>
               <div className="absolute inset-0 flex flex-col items-center justify-center">
-                <span className="text-5xl font-black text-gray-900">{progreso}%</span>
-                <span className="text-sm text-gray-600 font-semibold mt-1">Progreso</span>
+                <span className="text-6xl font-black text-gray-900 mb-1">{progreso}%</span>
+                <span className="text-sm text-gray-600 font-bold">Completado</span>
               </div>
             </div>
+            <div className="text-center">
+              <p className="text-5xl font-black text-emerald-600 mb-2">{practica.horas_completadas}h</p>
+              <p className="text-gray-700 font-semibold text-lg">
+                de <span className="font-black text-2xl text-gray-900">{practica.horas_requeridas}h</span> requeridas
+              </p>
+            </div>
+          </div>
 
-            <p className="text-center text-gray-600">
-              <span className="font-bold text-gray-900">{practica.horas_completadas}</span> de{' '}
-              <span className="font-bold text-gray-900">{practica.horas_requeridas}</span> horas
-            </p>
+          {/* Timeline Mejorado */}
+          <div className="space-y-5">
+            {/* Fecha de Inicio */}
+            <div className="p-6 bg-gradient-to-r from-blue-100 to-blue-50 rounded-2xl border-l-4 border-blue-600 shadow-lg hover:shadow-xl transition">
+              <div className="flex items-center gap-4 mb-3">
+                <div className="w-12 h-12 bg-blue-500 rounded-xl flex items-center justify-center shadow-md">
+                  <span className="text-3xl">📅</span>
+                </div>
+                <p className="text-sm text-blue-800 font-black uppercase tracking-wide">Fecha de Inicio</p>
+              </div>
+              <p className="text-2xl font-black text-gray-900 ml-16">
+                {new Date(practica.fecha_inicio_practica).toLocaleDateString('es-CL', { 
+                  weekday: 'long',
+                  day: 'numeric', 
+                  month: 'long', 
+                  year: 'numeric' 
+                })}
+              </p>
+            </div>
+
+            {/* Fecha de Término */}
+            <div className="p-6 bg-gradient-to-r from-purple-100 to-purple-50 rounded-2xl border-l-4 border-purple-600 shadow-lg hover:shadow-xl transition">
+              <div className="flex items-center gap-4 mb-3">
+                <div className="w-12 h-12 bg-purple-500 rounded-xl flex items-center justify-center shadow-md">
+                  <span className="text-3xl">🎯</span>
+                </div>
+                <p className="text-sm text-purple-800 font-black uppercase tracking-wide">Fecha de Término</p>
+              </div>
+              <p className="text-2xl font-black text-gray-900 ml-16">
+                {new Date(practica.fecha_termino_practica).toLocaleDateString('es-CL', { 
+                  weekday: 'long',
+                  day: 'numeric', 
+                  month: 'long', 
+                  year: 'numeric' 
+                })}
+              </p>
+            </div>
+
+            {/* Contador de Días */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="p-5 bg-gradient-to-br from-orange-100 to-orange-50 rounded-2xl text-center border-2 border-orange-300 shadow-lg hover:shadow-xl transition hover:scale-105">
+                <p className="text-5xl font-black text-orange-600 mb-2">{diasTranscurridos}</p>
+                <p className="text-xs text-gray-700 font-bold uppercase tracking-wide">Días transcurridos</p>
+              </div>
+              <div className="p-5 bg-gradient-to-br from-amber-100 to-amber-50 rounded-2xl text-center border-2 border-amber-300 shadow-lg hover:shadow-xl transition hover:scale-105">
+                <p className="text-5xl font-black text-amber-600 mb-2">{diasRestantes > 0 ? diasRestantes : 0}</p>
+                <p className="text-xs text-gray-700 font-bold uppercase tracking-wide">Días restantes</p>
+              </div>
+            </div>
           </div>
         </div>
 
-        <div className="grid md:grid-cols-3 gap-4 mt-8 pt-6 border-t border-gray-200">
+        {/* Descripción */}
+        {practica.descripcion && (
+          <div className="p-8 bg-gradient-to-r from-gray-50 to-gray-100 rounded-3xl border-l-4 border-blue-600 shadow-lg">
+            <div className="flex items-start gap-5">
+              <div className="w-14 h-14 bg-blue-100 rounded-2xl flex items-center justify-center flex-shrink-0">
+                <span className="text-4xl">📋</span>
+              </div>
+              <div className="flex-1">
+                <p className="text-sm text-gray-600 font-black mb-3 uppercase tracking-wide">Descripción de la Práctica</p>
+                <p className="text-gray-900 leading-relaxed text-lg">{practica.descripcion}</p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Acciones Rápidas - Rediseñadas */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-5 pt-8 border-t-2 border-gray-200">
           <button 
             onClick={() => abrirDetallePractica(practica)}
-            className="px-6 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl font-bold hover:from-blue-700 hover:to-purple-700 transition shadow-lg"
+            className="group px-6 py-5 bg-gradient-to-br from-blue-600 to-indigo-600 text-white rounded-2xl font-bold hover:from-blue-700 hover:to-indigo-700 transition shadow-xl hover:shadow-2xl hover:scale-105 flex flex-col items-center justify-center gap-3"
           >
-            📋 Ver Detalles
+            <span className="text-4xl group-hover:scale-110 transition">📋</span>
+            <span className="text-sm">Ver Detalles</span>
           </button>
+          
           <button 
             onClick={() => abrirSubirInforme()}
-            className="px-6 py-4 bg-gradient-to-r from-emerald-600 to-teal-600 text-white rounded-xl font-bold hover:from-emerald-700 hover:to-teal-700 transition shadow-lg"
+            className="group px-6 py-5 bg-gradient-to-br from-emerald-600 to-teal-600 text-white rounded-2xl font-bold hover:from-emerald-700 hover:to-teal-700 transition shadow-xl hover:shadow-2xl hover:scale-105 flex flex-col items-center justify-center gap-3"
           >
-            📤 Subir Informe
+            <span className="text-4xl group-hover:scale-110 transition">📤</span>
+            <span className="text-sm">Subir Informe</span>
           </button>
+          
           <button 
             onClick={() => abrirBitacora(practica)}
-            className="px-6 py-4 bg-gray-100 text-gray-900 rounded-xl font-bold hover:bg-gray-200 transition"
+            className="group px-6 py-5 bg-gradient-to-br from-purple-600 to-pink-600 text-white rounded-2xl font-bold hover:from-purple-700 hover:to-pink-700 transition shadow-xl hover:shadow-2xl hover:scale-105 flex flex-col items-center justify-center gap-3"
           >
-            📔 Mi Bitácora
+            <span className="text-4xl group-hover:scale-110 transition">📔</span>
+            <span className="text-sm">Bitácora</span>
+          </button>
+
+          <button 
+            className="group px-6 py-5 bg-gradient-to-br from-orange-600 to-red-600 text-white rounded-2xl font-bold hover:from-orange-700 hover:to-red-700 transition shadow-xl hover:shadow-2xl hover:scale-105 flex flex-col items-center justify-center gap-3"
+          >
+            <span className="text-4xl group-hover:scale-110 transition">📊</span>
+            <span className="text-sm">Ver Plan</span>
           </button>
         </div>
       </div>
     </div>
   );
 }
+
+// ============ ESTILOS CSS ADICIONALES ============
+// Agregar al archivo CSS global o dentro de un <style> tag
+
+/*
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.animate-shimmer {
+  animation: shimmer 2s infinite;
+}
+*/
 
 // ============ MODAL DE POSTULACIÓN ============
 function ModalPostulacion({ oferta, onClose, onPostular, postulando }) {
@@ -2266,10 +2743,19 @@ function NavLink({ icon, label, active, onClick }) {
   return (
     <button 
       onClick={onClick}
-      className={`flex items-center gap-2 px-4 py-2 rounded-xl font-semibold transition ${active ? 'bg-yellow-100 text-yellow-700' : 'text-gray-600 hover:bg-gray-100'}`}
+      className={`relative flex items-center gap-2 px-5 py-3 rounded-2xl font-bold transition-all duration-300 ${
+        active 
+          ? 'bg-gradient-to-r from-yellow-500 to-orange-500 text-white shadow-lg scale-105' 
+          : 'text-gray-700 hover:bg-gray-100 hover:scale-105'
+      }`}
     >
-      <span>{icon}</span>
+      <span className="text-xl">{icon}</span>
       <span>{label}</span>
+      
+      {/* Indicador activo */}
+      {active && (
+        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-8 h-1 bg-white rounded-t-full"></div>
+      )}
     </button>
   );
 }
@@ -2286,41 +2772,99 @@ function MobileNavLink({ icon, label, onClick }) {
   );
 }
 
-function QuickStat({ icon, value, label }) {
+function QuickStatMejorado({ icon, value, label, color }) {
   return (
-    <div className="bg-white/20 backdrop-blur rounded-2xl p-4">
-      <div className="flex items-center gap-3 mb-2">
-        <span className="text-2xl">{icon}</span>
-        <span className="text-3xl font-black text-white">{value}</span>
+    <div className="group relative bg-white/20 backdrop-blur-xl rounded-2xl p-5 hover:bg-white/30 transition-all duration-300 cursor-pointer overflow-hidden">
+      {/* Efecto de brillo en hover */}
+      <div className={`absolute inset-0 bg-gradient-to-r ${color} opacity-0 group-hover:opacity-30 transition-opacity duration-300`}></div>
+      
+      <div className="relative z-10">
+        <div className="flex items-center gap-3 mb-3">
+          <span className="text-4xl group-hover:scale-110 transition-transform">{icon}</span>
+          <span className="text-4xl font-black text-white drop-shadow-lg">{value}</span>
+        </div>
+        <p className="text-sm text-white/90 font-bold uppercase tracking-wide">{label}</p>
       </div>
-      <p className="text-sm text-white/80 font-semibold">{label}</p>
+      
+      {/* Indicador de hover */}
+      <div className="absolute bottom-0 left-0 right-0 h-1 bg-white/60 scale-x-0 group-hover:scale-x-100 transition-transform duration-300"></div>
     </div>
   );
 }
 
-function KPICard({ titulo, valor, porcentaje, color, icono }) {
+
+function KPICardMejorado({ titulo, valor, porcentaje, color, icono }) {
   const colorClasses = {
-    blue: { bg: 'bg-blue-100', text: 'text-blue-700', bar: 'bg-blue-600' },
-    purple: { bg: 'bg-purple-100', text: 'text-purple-700', bar: 'bg-purple-600' },
-    emerald: { bg: 'bg-emerald-100', text: 'text-emerald-700', bar: 'bg-emerald-600' }
+    blue: { 
+      bg: 'from-blue-500 to-cyan-500', 
+      text: 'text-blue-700', 
+      border: 'border-blue-300',
+      ring: 'ring-blue-200',
+      glow: 'shadow-blue-500/30',
+      iconBg: 'bg-blue-500'
+    },
+    purple: { 
+      bg: 'from-purple-500 to-pink-500', 
+      text: 'text-purple-700', 
+      border: 'border-purple-300',
+      ring: 'ring-purple-200',
+      glow: 'shadow-purple-500/30',
+      iconBg: 'bg-purple-500'
+    },
+    emerald: { 
+      bg: 'from-emerald-500 to-teal-500', 
+      text: 'text-emerald-700', 
+      border: 'border-emerald-300',
+      ring: 'ring-emerald-200',
+      glow: 'shadow-emerald-500/30',
+      iconBg: 'bg-emerald-500'
+    }
   };
   const colors = colorClasses[color];
 
   return (
-    <div className="p-6 bg-gray-50 rounded-2xl">
-      <div className="flex items-center justify-between mb-4">
-        <span className="text-3xl">{icono}</span>
-        <span className={`text-2xl font-black ${colors.text}`}>{valor}</span>
+    <div className={`group relative bg-white rounded-3xl p-8 border-2 ${colors.border} hover:border-transparent hover:ring-4 ${colors.ring} transition-all duration-300 hover:scale-105 cursor-pointer overflow-hidden shadow-lg hover:shadow-2xl`}>
+      {/* Efecto de gradiente en hover */}
+      <div className={`absolute inset-0 bg-gradient-to-br ${colors.bg} opacity-0 group-hover:opacity-10 transition-opacity duration-300`}></div>
+      
+      <div className="relative z-10">
+        {/* Header con icono */}
+        <div className="flex items-center justify-between mb-6">
+          <div className={`w-16 h-16 ${colors.iconBg} rounded-2xl flex items-center justify-center shadow-xl group-hover:shadow-2xl ${colors.glow} group-hover:scale-110 transition-all duration-300`}>
+            <span className="text-4xl">{icono}</span>
+          </div>
+          <span className={`text-5xl font-black ${colors.text} group-hover:scale-110 transition-transform duration-300`}>
+            {valor}
+          </span>
+        </div>
+        
+        {/* Título */}
+        <p className="text-base font-bold text-gray-700 mb-4 group-hover:text-gray-900 transition">
+          {titulo}
+        </p>
+        
+        {/* Barra de progreso con animación */}
+        <div className="relative">
+          <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
+            <div 
+              className={`h-full bg-gradient-to-r ${colors.bg} rounded-full transition-all duration-1000 relative overflow-hidden`}
+              style={{ width: `${porcentaje}%` }}
+            >
+              {/* Efecto shimmer */}
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/50 to-transparent animate-shimmer"></div>
+            </div>
+          </div>
+          <p className={`text-sm font-black ${colors.text} mt-2 text-right`}>
+            {porcentaje}% completado
+          </p>
+        </div>
       </div>
-      <p className="text-sm font-semibold text-gray-700 mb-3">{titulo}</p>
-      <div className="w-full bg-gray-200 rounded-full h-2">
-        <div className={`${colors.bar} h-2 rounded-full transition-all`} style={{ width: `${porcentaje}%` }}></div>
-      </div>
-      <p className="text-xs text-gray-600 mt-2">{porcentaje}% completado</p>
+      
+      {/* Decoración de esquina */}
+      <div className={`absolute top-0 right-0 w-24 h-24 bg-gradient-to-br ${colors.bg} opacity-10 rounded-bl-full group-hover:opacity-20 transition-opacity`}></div>
     </div>
   );
 }
-
 function InfoCard({ icon, label, value }) {
   return (
     <div className="p-4 bg-gray-50 rounded-xl">
@@ -2345,68 +2889,70 @@ function InfoDetailCard({ icon, label, value }) {
   );
 }
 
-function OfertaCard({ oferta, onPostular }) {
-  // ✅ NUEVO: Verificar si tiene práctica activa
-  const { practicas } = useDashboardContext(); // Si usas context
-  // O si no usas context, pasa practicaActual como prop
-  
-  const tienePracticaActiva = practicaActual !== null;
-  const puedePostular = !oferta.ya_postulado && !tienePracticaActiva;
+function OfertaCardMejorada({ oferta, onPostular }) {
+  const puedePostular = !oferta.ya_postulado;
   
   return (
-    <div className="group p-4 border-2 border-gray-200 rounded-2xl hover:border-yellow-400 hover:shadow-lg transition cursor-pointer">
-      <div className="flex items-start justify-between mb-3">
-        <div className="flex-1">
-          <h4 className="font-bold text-gray-900 mb-1 group-hover:text-yellow-600 transition">
-            {oferta.titulo_oferta}
-          </h4>
-          <p className="text-sm text-gray-600 flex items-center gap-1">
-            <span>🏢</span> {oferta.empresa_nombre}
-          </p>
+    <div className="group relative bg-white rounded-2xl p-6 border-2 border-gray-200 hover:border-yellow-400 hover:shadow-2xl transition-all duration-300 cursor-pointer overflow-hidden">
+      {/* Efecto de gradiente en hover */}
+      <div className="absolute inset-0 bg-gradient-to-br from-yellow-500/5 to-orange-500/5 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+      
+      {/* Ribbon si ya postuló */}
+      {oferta.ya_postulado && (
+        <div className="absolute top-4 -right-12 rotate-45 bg-gradient-to-r from-emerald-500 to-teal-500 text-white text-xs font-black py-1 px-12 shadow-lg z-10">
+          ✓ POSTULADO
         </div>
-        {oferta.ya_postulado && (
-          <span className="px-3 py-1 bg-emerald-100 text-emerald-700 rounded-full text-xs font-bold">
-            ✓ Postulado
-          </span>
-        )}
-        {tienePracticaActiva && !oferta.ya_postulado && (
-          <span className="px-3 py-1 bg-gray-100 text-gray-500 rounded-full text-xs font-bold">
-            🔒 Bloqueado
-          </span>
-        )}
-      </div>
+      )}
       
-      <div className="flex items-center gap-2 flex-wrap mb-3">
-        <span className="text-xs bg-blue-100 text-blue-700 px-3 py-1 rounded-lg font-bold">
-          ⏱️ {oferta.duracion_horas}h
-        </span>
-        <span className="text-xs bg-purple-100 text-purple-700 px-3 py-1 rounded-lg font-bold">
-          📍 {oferta.modalidad_trabajo}
-        </span>
-        {oferta.salario_referencial && (
-          <span className="text-xs bg-emerald-100 text-emerald-700 px-3 py-1 rounded-lg font-bold">
-            💰 ${Number(oferta.salario_referencial).toLocaleString('es-CL')}
+      <div className="relative z-10">
+        <div className="flex items-start gap-4 mb-4">
+          <div className="w-14 h-14 bg-gradient-to-br from-yellow-500 to-orange-500 rounded-2xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform flex-shrink-0">
+            <span className="text-3xl">🏢</span>
+          </div>
+          <div className="flex-1 min-w-0">
+            <h4 className="font-black text-lg text-gray-900 mb-1 group-hover:text-yellow-600 transition line-clamp-1">
+              {oferta.titulo_oferta}
+            </h4>
+            <p className="text-sm text-gray-600 font-semibold flex items-center gap-2">
+              <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span>
+              {oferta.empresa_nombre}
+            </p>
+          </div>
+        </div>
+        
+        <div className="flex items-center gap-2 flex-wrap mb-4">
+          <span className="px-3 py-1.5 bg-blue-100 text-blue-700 rounded-lg text-xs font-black flex items-center gap-1 shadow-sm">
+            <span>⏱️</span> {oferta.duracion_horas}h
           </span>
-        )}
+          <span className="px-3 py-1.5 bg-purple-100 text-purple-700 rounded-lg text-xs font-black flex items-center gap-1 shadow-sm">
+            <span>📍</span> {oferta.modalidad_trabajo}
+          </span>
+          {oferta.salario_referencial && (
+            <span className="px-3 py-1.5 bg-emerald-100 text-emerald-700 rounded-lg text-xs font-black flex items-center gap-1 shadow-sm">
+              <span>💰</span> ${Number(oferta.salario_referencial).toLocaleString('es-CL')}
+            </span>
+          )}
+        </div>
+        
+        <button 
+          onClick={(e) => {
+            e.stopPropagation();
+            puedePostular && onPostular(oferta);
+          }}
+          disabled={!puedePostular}
+          className={`w-full px-4 py-3 rounded-xl font-bold transition-all text-sm shadow-lg ${
+            !puedePostular
+              ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
+              : 'bg-gradient-to-r from-yellow-500 to-orange-500 text-white hover:from-yellow-600 hover:to-orange-600 hover:scale-105 hover:shadow-xl'
+          }`}
+        >
+          {oferta.ya_postulado ? '✓ Ya postulaste' : '📨 Postular'}
+        </button>
       </div>
-      
-      <button 
-        onClick={() => puedePostular && onPostular(oferta)}
-        disabled={!puedePostular}
-        className={`w-full px-3 py-2 rounded-lg font-semibold transition text-sm ${
-          !puedePostular
-            ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
-            : 'bg-gradient-to-r from-yellow-500 to-orange-500 text-white hover:from-yellow-600 hover:to-orange-600'
-        }`}
-        title={tienePracticaActiva && !oferta.ya_postulado ? 'Ya tienes una práctica activa' : ''}
-      >
-        {oferta.ya_postulado ? '✓ Ya postulaste' : 
-         tienePracticaActiva ? '🔒 Práctica Activa' : 
-         '📨 Postular'}
-      </button>
     </div>
   );
 }
+
 function PostulacionCard({ postulacion, onCancelar, cancelando }) {
   const estados = {
     pendiente: { bg: 'bg-amber-100', text: 'text-amber-700', icon: '⏳' },
@@ -2476,101 +3022,134 @@ function NotificacionItem({ notificacion, onMarcarLeida }) {
 function InformeCard({ numero, informe, onSubir, deshabilitado }) {
   const estados = {
     aprobado: { 
-      bg: 'bg-emerald-500', 
-      text: 'text-white', 
+      bg: 'from-emerald-500 to-teal-500', 
       icon: '✓',
       label: 'Aprobado',
-      borderColor: 'border-emerald-500'
+      textColor: 'text-white',
+      borderColor: 'border-emerald-500',
+      badgeBg: 'bg-emerald-500'
     },
     enviado: { 
-      bg: 'bg-amber-500', 
-      text: 'text-white', 
+      bg: 'from-amber-500 to-orange-500', 
       icon: '⏳',
       label: 'En Revisión',
-      borderColor: 'border-amber-500'
+      textColor: 'text-white',
+      borderColor: 'border-amber-500',
+      badgeBg: 'bg-amber-500'
     },
     rechazado: { 
-      bg: 'bg-red-500', 
-      text: 'text-white', 
+      bg: 'from-red-500 to-pink-500', 
       icon: '✗',
       label: 'Rechazado',
-      borderColor: 'border-red-500'
+      textColor: 'text-white',
+      borderColor: 'border-red-500',
+      badgeBg: 'bg-red-500'
     },
     sin_subir: { 
-      bg: 'bg-gray-300', 
-      text: 'text-gray-700', 
+      bg: 'from-gray-400 to-gray-500', 
       icon: '📤',
-      label: 'Sin Subir',
-      borderColor: 'border-gray-300'
+      label: 'Pendiente',
+      textColor: 'text-white',
+      borderColor: 'border-gray-300',
+      badgeBg: 'bg-gray-400'
     }
   };
 
   const estado = informe ? (estados[informe.estado_informe] || estados.sin_subir) : estados.sin_subir;
 
   return (
-    <div className={`bg-white rounded-2xl shadow-lg overflow-hidden border-2 ${estado.borderColor}`}>
-      <div className={`${estado.bg} ${estado.text} p-4`}>
-        <div className="flex items-center justify-between">
-          <h3 className="text-lg font-black">Informe #{numero}</h3>
-          <span className="text-2xl">{estado.icon}</span>
+    <div className={`relative bg-white rounded-3xl shadow-xl overflow-hidden border-2 ${estado.borderColor} hover:shadow-2xl transition-all hover:scale-105 cursor-pointer`}>
+      {/* Header con gradiente */}
+      <div className={`relative bg-gradient-to-r ${estado.bg} p-6 overflow-hidden`}>
+        <div className="absolute inset-0 opacity-10">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-white rounded-full -translate-y-16 translate-x-16"></div>
         </div>
-        <p className="text-sm mt-1 opacity-90">{estado.label}</p>
+        
+        <div className="relative z-10 flex items-center justify-between">
+          <div>
+            <div className="flex items-center gap-3 mb-2">
+              <span className={`w-12 h-12 ${estado.badgeBg} rounded-xl flex items-center justify-center text-white font-black text-xl shadow-lg`}>
+                {numero}
+              </span>
+              <h3 className={`text-2xl font-black ${estado.textColor}`}>
+                Informe #{numero}
+              </h3>
+            </div>
+            <p className={`text-sm ${estado.textColor} opacity-90 font-semibold`}>
+              {estado.label}
+            </p>
+          </div>
+          <div className={`text-5xl ${estado.textColor}`}>
+            {estado.icon}
+          </div>
+        </div>
       </div>
       
-      <div className="p-4">
+      {/* Contenido */}
+      <div className="p-6">
         {informe ? (
-          <div className="space-y-3">
-            <div className="flex justify-between items-center">
-              <span className="text-xs text-gray-600">Fecha de envío</span>
-              <span className="text-sm font-semibold text-gray-900">
-                {new Date(informe.fecha_envio).toLocaleDateString('es-CL')}
-              </span>
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="p-3 bg-gray-50 rounded-xl">
+                <p className="text-xs text-gray-600 font-bold mb-1">📅 Enviado</p>
+                <p className="text-sm font-black text-gray-900">
+                  {new Date(informe.fecha_envio).toLocaleDateString('es-CL', {
+                    day: 'numeric',
+                    month: 'short'
+                  })}
+                </p>
+              </div>
+              
+              {informe.horas_registradas && (
+                <div className="p-3 bg-blue-50 rounded-xl">
+                  <p className="text-xs text-gray-600 font-bold mb-1">⏰ Horas</p>
+                  <p className="text-2xl font-black text-blue-600">
+                    {informe.horas_registradas}h
+                  </p>
+                </div>
+              )}
             </div>
             
-            {informe.fecha_revision && (
-              <div className="flex justify-between items-center">
-                <span className="text-xs text-gray-600">Fecha de revisión</span>
-                <span className="text-sm font-semibold text-gray-900">
-                  {new Date(informe.fecha_revision).toLocaleDateString('es-CL')}
-                </span>
-              </div>
-            )}
-            
-            {informe.horas_registradas && (
-              <div className="flex justify-between items-center">
-                <span className="text-xs text-gray-600">Horas registradas</span>
-                <span className="text-lg font-black text-blue-600">{informe.horas_registradas}h</span>
-              </div>
-            )}
-            
             {informe.comentarios_profesor && (
-              <div className="p-3 bg-gray-50 rounded-lg">
-                <p className="text-xs text-gray-600 mb-1">Comentarios del profesor:</p>
+              <div className="p-4 bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl border-l-4 border-purple-500">
+                <p className="text-xs text-purple-700 font-bold mb-2">💬 Comentarios</p>
                 <p className="text-sm text-gray-900">{informe.comentarios_profesor}</p>
               </div>
             )}
 
-            <button className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition text-sm">
-              Ver Detalles
+            <button className="w-full px-4 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-2xl font-bold hover:from-blue-700 hover:to-indigo-700 transition shadow-lg hover:scale-105">
+              📋 Ver Detalles
             </button>
           </div>
         ) : (
           <div className="text-center py-8">
-            <span className="text-5xl mb-3 block">📄</span>
-            <p className="text-gray-600 text-sm mb-4">Aún no has subido este informe</p>
+            <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <span className="text-5xl">📄</span>
+            </div>
+            <p className="text-gray-600 text-sm mb-6 font-semibold">
+              Este informe aún no ha sido subido
+            </p>
             <button 
               onClick={onSubir}
               disabled={deshabilitado}
-              className="px-4 py-2 bg-emerald-600 text-white rounded-lg font-semibold hover:bg-emerald-700 transition text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-6 py-4 bg-gradient-to-r from-emerald-600 to-teal-600 text-white rounded-2xl font-black hover:from-emerald-700 hover:to-teal-700 transition shadow-lg disabled:opacity-50 disabled:cursor-not-allowed hover:scale-105"
             >
               📤 Subir Informe #{numero}
             </button>
           </div>
         )}
       </div>
+      
+      {/* Perforación decorativa tipo ticket */}
+      <div className="absolute left-0 right-0 top-[160px] flex justify-between px-2">
+        {[...Array(15)].map((_, i) => (
+          <div key={i} className="w-2 h-2 bg-gray-100 rounded-full"></div>
+        ))}
+      </div>
     </div>
   );
 }
+
 
 function InformeHistorialItem({ informe }) {
   const estados = {
@@ -2620,43 +3199,3 @@ function EstadoPracticaBadge({ estado }) {
     </span>
   );
 }
-
-// Estilos CSS para animaciones (agregar al archivo CSS global)
-const styles = `
-@keyframes bounce-in {
-  0% {
-    opacity: 0;
-    transform: scale(0.3);
-  }
-  50% {
-    transform: scale(1.05);
-  }
-  70% {
-    transform: scale(0.9);
-  }
-  100% {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-
-@keyframes scale-in {
-  0% {
-    transform: scale(0);
-  }
-  50% {
-    transform: scale(1.2);
-  }
-  100% {
-    transform: scale(1);
-  }
-}
-
-.animate-bounce-in {
-  animation: bounce-in 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-}
-
-.animate-scale-in {
-  animation: scale-in 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-}
-`;

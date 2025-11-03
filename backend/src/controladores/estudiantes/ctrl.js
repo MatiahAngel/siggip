@@ -80,30 +80,75 @@ export const obtenerEstadisticasEstudiante = async (req, res) => {
 
     const id_estudiante = estudianteResult[0].id_estudiante;
 
-    // ✅ CONSULTA CORREGIDA: Contar TODAS las postulaciones, no solo activas
+    // ✅ CONSULTA CORREGIDA: Separa claramente prácticas de postulaciones
     const statsQuery = `
       SELECT 
-        -- Prácticas
-        COUNT(CASE WHEN pr.estado_practica = 'completada' THEN 1 END) as practicas_completadas,
-        COUNT(CASE WHEN pr.estado_practica IN ('asignada', 'en_curso') THEN 1 END) as practicas_en_curso,
-        COALESCE(SUM(CASE WHEN pr.estado_practica IN ('en_curso', 'completada') THEN pr.horas_completadas ELSE 0 END), 0) as horas_completadas,
+        -- ✅ Prácticas REALES (no postulaciones)
+        COUNT(DISTINCT CASE 
+          WHEN pr.estado_practica = 'completada' 
+          THEN pr.id_practica 
+        END) as practicas_completadas,
         
-        -- Postulaciones - ✅ CORREGIDO: Contar todas las postulaciones
-        COUNT(DISTINCT CASE WHEN po.estado_postulacion IN ('pendiente', 'en_revision') THEN po.id_postulacion END) as postulaciones_activas,
+        COUNT(DISTINCT CASE 
+          WHEN pr.estado_practica IN ('asignada', 'en_curso') 
+          THEN pr.id_practica 
+        END) as practicas_en_curso,
+        
+        -- ✅ Horas SOLO de prácticas activas o completadas
+        COALESCE(SUM(CASE 
+          WHEN pr.estado_practica IN ('en_curso', 'completada') 
+          THEN pr.horas_completadas 
+          ELSE 0 
+        END), 0) as horas_completadas,
+        
+        -- Postulaciones (separadas de prácticas)
+        COUNT(DISTINCT CASE 
+          WHEN po.estado_postulacion IN ('pendiente', 'en_revision') 
+          THEN po.id_postulacion 
+        END) as postulaciones_activas,
+        
         COUNT(DISTINCT po.id_postulacion) as total_postulaciones,
-        COUNT(DISTINCT CASE WHEN po.estado_postulacion = 'aceptada' THEN po.id_postulacion END) as postulaciones_aceptadas,
-        COUNT(DISTINCT CASE WHEN po.estado_postulacion = 'rechazada' THEN po.id_postulacion END) as postulaciones_rechazadas,
-        COUNT(DISTINCT CASE WHEN po.estado_postulacion = 'cancelada' THEN po.id_postulacion END) as postulaciones_canceladas,
+        
+        COUNT(DISTINCT CASE 
+          WHEN po.estado_postulacion = 'aceptada' 
+          THEN po.id_postulacion 
+        END) as postulaciones_aceptadas,
+        
+        COUNT(DISTINCT CASE 
+          WHEN po.estado_postulacion = 'rechazada' 
+          THEN po.id_postulacion 
+        END) as postulaciones_rechazadas,
+        
+        COUNT(DISTINCT CASE 
+          WHEN po.estado_postulacion = 'cancelada' 
+          THEN po.id_postulacion 
+        END) as postulaciones_canceladas,
         
         -- Informes
-        COUNT(DISTINCT CASE WHEN inf.estado_informe = 'aprobado' THEN inf.id_informe END) as informes_aprobados,
-        COUNT(DISTINCT CASE WHEN inf.estado_informe IN ('enviado', 'en_revision') THEN inf.id_informe END) as informes_pendientes,
+        COUNT(DISTINCT CASE 
+          WHEN inf.estado_informe = 'aprobado' 
+          THEN inf.id_informe 
+        END) as informes_aprobados,
+        
+        COUNT(DISTINCT CASE 
+          WHEN inf.estado_informe IN ('enviado', 'en_revision') 
+          THEN inf.id_informe 
+        END) as informes_pendientes,
         
         1 as practicas_requeridas
+        
       FROM siggip.estudiantes e
-      LEFT JOIN siggip.practicas pr ON e.id_estudiante = pr.id_estudiante
-      LEFT JOIN siggip.postulaciones po ON e.id_estudiante = po.id_estudiante
-      LEFT JOIN siggip.informes_avance inf ON pr.id_practica = inf.id_practica
+      
+      -- ✅ LEFT JOIN para que siempre devuelva datos aunque no haya prácticas
+      LEFT JOIN siggip.practicas pr 
+        ON e.id_estudiante = pr.id_estudiante
+        
+      LEFT JOIN siggip.postulaciones po 
+        ON e.id_estudiante = po.id_estudiante
+        
+      LEFT JOIN siggip.informes_avance inf 
+        ON pr.id_practica = inf.id_practica
+        
       WHERE e.id_estudiante = :id_estudiante
       GROUP BY e.id_estudiante
     `;
@@ -133,12 +178,12 @@ export const obtenerEstadisticasEstudiante = async (req, res) => {
       ? Math.round((resultado.postulaciones_aceptadas / resultado.total_postulaciones) * 100)
       : 0;
 
-    console.log('📊 Estadísticas:', {
+    console.log('📊 Estadísticas corregidas:', {
+      practicas_en_curso: resultado.practicas_en_curso,
+      practicas_completadas: resultado.practicas_completadas,
+      horas_completadas: resultado.horas_completadas,
       total_postulaciones: resultado.total_postulaciones,
-      activas: resultado.postulaciones_activas,
-      aceptadas: resultado.postulaciones_aceptadas,
-      rechazadas: resultado.postulaciones_rechazadas,
-      canceladas: resultado.postulaciones_canceladas
+      postulaciones_activas: resultado.postulaciones_activas
     });
 
     return res.json(resultado);
