@@ -8,6 +8,7 @@ import Welcome from './paginas/Welcome';
 import Login from './paginas/autenticacion/Login';
 import LoginEstudiante from './paginas/autenticacion/LoginEstudiante';
 import LoginProfesor from './paginas/autenticacion/LoginProfesor';
+import LoginEmpresas from './paginas/autenticacion/LoginEmpresas';
 import Dashboard from './paginas/admin/Dashboard';
 import ListaUsuarios from './paginas/admin/usuarios/ListaUsuarios';
 import Empresas from './paginas/admin/empresas/index';
@@ -15,6 +16,7 @@ import ListaEspecialidades from './paginas/admin/especialidades/ListaEspecialida
 import ListaOfertas from './paginas/admin/ofertas';
 import DashboardProfesor from './paginas/profesor/DashboardProfesor';
 import DashboardEstudiante from './paginas/estudiante/DashboardEstudiante';
+import DashboardEmpresa from './paginas/empresa/DashboardEmpresa';
 
 const TempPage = ({ title }) => (
   <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -52,6 +54,7 @@ function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/login/estudiante" element={<LoginEstudiante />} />
           <Route path="/login/profesor" element={<LoginProfesor />} />
+          <Route path="/login/empresa" element={<LoginEmpresas />} />
           
           {/* Rutas Admin */}
           <Route path="/admin/dashboard" element={<PrivateRoute roles={['administrador', 'directivo']}><Dashboard /></PrivateRoute>} />
@@ -68,7 +71,7 @@ function App() {
           <Route path="/estudiante/dashboard" element={<PrivateRoute roles={['estudiante']}><DashboardEstudiante /></PrivateRoute>} />
           
           {/* Rutas Empresa */}
-          <Route path="/empresa/dashboard" element={<PrivateRoute roles={['empresa']}><TempPage title="Dashboard Empresa" /></PrivateRoute>} />
+          <Route path="/empresa/dashboard" element={<PrivateRoute roles={['empresa']}><DashboardEmpresa /></PrivateRoute>} />
           
           {/* 404 */}
           <Route path="*" element={<NotFound />} />

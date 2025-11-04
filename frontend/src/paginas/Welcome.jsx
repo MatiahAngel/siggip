@@ -48,6 +48,8 @@ export default function Welcome() {
       navigate('/login/estudiante');
     } else if (roleId === 'profesor') {
       navigate('/login/profesor');
+    } else if (roleId === 'empresa') {
+      navigate('/login/empresa');
     } else {
       navigate('/login', { state: { userType: roleId } });
     }
