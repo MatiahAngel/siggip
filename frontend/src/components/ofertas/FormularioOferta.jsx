@@ -14,7 +14,8 @@ export default function FormularioOferta({ oferta, onClose, onSuccess }) {
     duracion_horas: '',
     horario_trabajo: '',
     ubicacion: '',
-    modalidad_trabajo: 'presencial',
+  // 🔒 En esta versión, la modalidad está restringida a 'presencial'
+  modalidad_trabajo: 'presencial',
     cupos_disponibles: 1,
     fecha_inicio: '',
     fecha_limite_postulacion: '',
@@ -472,13 +473,12 @@ export default function FormularioOferta({ oferta, onClose, onSuccess }) {
                   <select
                     name="modalidad_trabajo"
                     value={formData.modalidad_trabajo}
+                    // 🔒 Restringido a "Presencial"; dejamos el select con una sola opción para claridad
                     onChange={handleChange}
                     required
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-500 capitalize"
                   >
                     <option value="presencial">Presencial</option>
-                    <option value="remoto">Remoto</option>
-                    <option value="hibrido">Híbrido</option>
                   </select>
                 </div>
               </div>

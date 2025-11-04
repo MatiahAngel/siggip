@@ -127,7 +127,7 @@ export const createOferta = async (req, res) => {
     duracion_horas,
     horario_trabajo,
     ubicacion,
-    modalidad_trabajo,
+    modalidad_trabajo, // ⚠️ Ignorado: por requerimiento actual solo permitimos 'presencial'
     cupos_disponibles,
     fecha_inicio,
     fecha_limite_postulacion,
@@ -140,7 +140,7 @@ export const createOferta = async (req, res) => {
     return res.status(400).json({ error: 'Faltan campos obligatorios' });
   }
 
-  // Validar lógica de fechas
+  // 📅 Validar lógica de fechas de negocio
   const fechaLimite = new Date(fecha_limite_postulacion);
   const fechaInicio = new Date(fecha_inicio);
   const hoy = new Date();
@@ -190,7 +190,8 @@ export const createOferta = async (req, res) => {
       duracion_horas,
       horario_trabajo || null,
       ubicacion || null,
-      modalidad_trabajo || 'presencial',
+      // 🔒 Forzamos la modalidad a 'presencial' según requerimiento
+      'presencial',
       cupos_disponibles || 1,
       fecha_inicio,
       fecha_limite_postulacion,
@@ -284,7 +285,8 @@ export const updateOferta = async (req, res) => {
       duracion_horas,
       horario_trabajo || null,
       ubicacion || null,
-      modalidad_trabajo,
+      // 🔒 Forzamos modalidad a 'presencial' en actualizaciones también
+      'presencial',
       cupos_disponibles,
       fecha_inicio,
       fecha_limite_postulacion,

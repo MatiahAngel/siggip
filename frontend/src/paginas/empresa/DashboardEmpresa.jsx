@@ -3,6 +3,10 @@
 
 import { useEffect, useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
+//  Usamos el formulario reutilizable de ofertas como modal
+import FormularioOferta from '../../components/ofertas/FormularioOferta.jsx';
+//  Servicios API existentes para ofertas (listar por ahora general)
+import { getOfertas } from '../../servicios/api/ofertasService';
 
 export default function DashboardEmpresa() {
   const { user, logout } = useAuth();
@@ -20,6 +24,8 @@ export default function DashboardEmpresa() {
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [activeSection, setActiveSection] = useState('inicio');
+  //  Estado para abrir/cerrar el modal de creación/edición de ofertas
+  const [showCrearOferta, setShowCrearOferta] = useState(false);
 
   useEffect(() => {
     cargarDatos();
@@ -29,65 +35,24 @@ export default function DashboardEmpresa() {
     try {
       setLoading(true);
       setError(null);
+      //  Cargar ofertas desde la API (por ahora todas; en siguiente iteración filtramos por empresa autenticada)
+      const ofertasApi = await getOfertas();
+      setOfertas(Array.isArray(ofertasApi) ? ofertasApi : []);
 
-      // TODO: Reemplazar con llamadas reales a API cuando estén disponibles
-      // Datos de ejemplo
+      // Armar KPIs básicos a partir de los datos
+      const activas = (ofertasApi || []).filter(o => o.estado_oferta === 'activa').length;
+      const totalPost = (ofertasApi || []).reduce((acc, o) => acc + (Number(o.total_postulaciones || o.postulaciones_count || 0)), 0);
       setStats({
-        ofertasActivas: 5,
-        postulacionesPendientes: 12,
-        practicantesActivos: 3,
-        evaluacionesPendientes: 2,
+        ofertasActivas: activas,
+        // Nota: como no tenemos "pendientes" separado, usamos el total como aproximación
+        postulacionesPendientes: totalPost,
+        practicantesActivos: 0, // TODO: integrar endpoint real de practicantes de la empresa
+        evaluacionesPendientes: 0, // TODO: integrar cuando exista
       });
 
-      setOfertas([
-        {
-          id_oferta: 1,
-          titulo_oferta: 'Práctica en Desarrollo Web',
-          postulaciones_count: 8,
-          estado_oferta: 'activa',
-          fecha_publicacion: new Date().toISOString(),
-          duracion_horas: 360,
-        },
-        {
-          id_oferta: 2,
-          titulo_oferta: 'Práctica en Diseño Gráfico',
-          postulaciones_count: 4,
-          estado_oferta: 'activa',
-          fecha_publicacion: new Date().toISOString(),
-          duracion_horas: 320,
-        },
-      ]);
-
-      setPostulaciones([
-        {
-          id_postulacion: 1,
-          estudiante_nombre: 'Juan Pérez González',
-          titulo_oferta: 'Práctica en Desarrollo Web',
-          estado_postulacion: 'pendiente',
-          fecha_postulacion: new Date().toISOString(),
-          especialidad: 'Programación',
-        },
-        {
-          id_postulacion: 2,
-          estudiante_nombre: 'María Silva Torres',
-          titulo_oferta: 'Práctica en Diseño Gráfico',
-          estado_postulacion: 'pendiente',
-          fecha_postulacion: new Date().toISOString(),
-          especialidad: 'Diseño',
-        },
-      ]);
-
-      setPracticantes([
-        {
-          id_practica: 1,
-          estudiante_nombre: 'Carlos Ramírez',
-          titulo_oferta: 'Práctica en Desarrollo Web',
-          progreso: 65,
-          horas_completadas: 234,
-          horas_requeridas: 360,
-          fecha_inicio: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString(),
-        },
-      ]);
+      // ⏳ De momento dejamos postulaciones/practicantes en mock hasta tener endpoints
+      setPostulaciones([]);
+      setPracticantes([]);
 
     } catch (err) {
       console.error('Error cargando datos:', err);
@@ -292,7 +257,8 @@ export default function DashboardEmpresa() {
                       <div className="text-6xl mb-3">💼</div>
                       <p className="font-semibold text-gray-900 mb-2">Sin ofertas activas</p>
                       <p className="text-sm text-gray-600 mb-4">Publica tu primera oferta de práctica</p>
-                      <button className="px-6 py-3 bg-orange-600 text-white rounded-xl font-semibold hover:bg-orange-700 transition">
+                      <button className="px-6 py-3 bg-orange-600 text-white rounded-xl font-semibold hover:bg-orange-700 transition"
+                        onClick={() => setShowCrearOferta(true)}>
                         ➕ Nueva Oferta
                       </button>
                     </div>
@@ -355,7 +321,8 @@ export default function DashboardEmpresa() {
               </div>
 
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <ActionButton icon="➕" label="Nueva Oferta" onClick={() => setActiveSection('ofertas')} gradient="from-orange-500 to-orange-600" />
+                {/* Abrimos el modal de creación directamente */}
+                <ActionButton icon="➕" label="Nueva Oferta" onClick={() => setShowCrearOferta(true)} gradient="from-orange-500 to-orange-600" />
                 <ActionButton icon="📨" label="Ver Postulaciones" onClick={() => setActiveSection('postulaciones')} gradient="from-amber-500 to-amber-600" />
                 <ActionButton icon="👥" label="Mis Practicantes" onClick={() => setActiveSection('practicantes')} gradient="from-yellow-500 to-yellow-600" />
                 <ActionButton icon="📊" label="Reportes" onClick={() => {}} gradient="from-orange-600 to-red-600" />
@@ -366,7 +333,7 @@ export default function DashboardEmpresa() {
 
         {/* Sección Ofertas */}
         {activeSection === 'ofertas' && (
-          <SeccionOfertas ofertas={ofertas} />
+          <SeccionOfertas ofertas={ofertas} onNuevaOferta={() => setShowCrearOferta(true)} />
         )}
 
         {/* Sección Postulaciones */}
@@ -379,6 +346,20 @@ export default function DashboardEmpresa() {
           <SeccionPracticantes practicantes={practicantes} />
         )}
       </main>
+      {/*  Modal de creación/edición de Oferta: se muestra cuando showCrearOferta = true */}
+      {showCrearOferta && (
+        <FormularioOferta
+          // No pasamos "oferta" para modo creación
+          onClose={() => setShowCrearOferta(false)}
+          onSuccess={() => {
+            // Al crear/editar, recargamos datos y cerramos el modal
+            cargarDatos();
+            setShowCrearOferta(false);
+            // Opcional: cambiar a la sección de ofertas para que el usuario la vea
+            setActiveSection('ofertas');
+          }}
+        />
+      )}
     </div>
   );
 }
@@ -450,12 +431,13 @@ function OfertaCard({ oferta }) {
       <div className="flex items-start justify-between mb-3">
         <div className="flex-1">
           <h4 className="font-bold text-gray-900 mb-1 group-hover:text-orange-600 transition">{oferta.titulo_oferta}</h4>
-          <p className="text-sm text-gray-600">Publicada {new Date(oferta.fecha_publicacion).toLocaleDateString('es-CL')}</p>
+          {/*  Usamos fecha_publicacion si viene, de lo contrario fallback a fecha_creacion */}
+          <p className="text-sm text-gray-600">Publicada {new Date(oferta.fecha_publicacion || oferta.fecha_creacion).toLocaleDateString('es-CL')}</p>
         </div>
         <span className="px-3 py-1 bg-emerald-100 text-emerald-700 rounded-full text-xs font-bold">✓ Activa</span>
       </div>
       <div className="flex items-center gap-3 flex-wrap">
-        <span className="text-xs bg-orange-100 text-orange-700 px-3 py-1 rounded-lg font-bold">📨 {oferta.postulaciones_count} postulaciones</span>
+        <span className="text-xs bg-orange-100 text-orange-700 px-3 py-1 rounded-lg font-bold">📨 {oferta.postulaciones_count ?? oferta.total_postulaciones ?? 0} postulaciones</span>
         <span className="text-xs bg-blue-100 text-blue-700 px-3 py-1 rounded-lg font-bold">⏱️ {oferta.duracion_horas}h</span>
       </div>
     </div>
@@ -539,7 +521,7 @@ function ActionButton({ icon, label, onClick, gradient }) {
   );
 }
 
-function SeccionOfertas({ ofertas }) {
+function SeccionOfertas({ ofertas, onNuevaOferta }) {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -547,7 +529,7 @@ function SeccionOfertas({ ofertas }) {
           <h2 className="text-3xl font-black text-gray-900">💼 Mis Ofertas</h2>
           <p className="text-gray-600">Gestiona tus ofertas de práctica profesional</p>
         </div>
-        <button className="px-6 py-3 bg-gradient-to-r from-orange-600 to-amber-600 text-white rounded-xl font-bold hover:from-orange-700 hover:to-amber-700 transition shadow-lg">
+        <button className="px-6 py-3 bg-gradient-to-r from-orange-600 to-amber-600 text-white rounded-xl font-bold hover:from-orange-700 hover:to-amber-700 transition shadow-lg" onClick={onNuevaOferta}>
           ➕ Nueva Oferta
         </button>
       </div>
@@ -570,6 +552,11 @@ function SeccionOfertas({ ofertas }) {
     </div>
   );
 }
+
+// Modal: reusa FormularioOferta para crear una oferta. Al éxito, refrescamos la lista.
+// Nota: El formulario actualmente permite escoger la empresa; en una siguiente iteración
+// podemos autofijar la empresa del usuario autenticado y ocultar ese select.
+
 
 function SeccionPostulaciones({ postulaciones }) {
   return (
