@@ -107,15 +107,6 @@ export default function DashboardEstudiante() {
   const abrirModalPostulacion = (oferta) => {
     if (oferta.ya_postulado) return;
     
-    const practicaActual = practicas.find(p => 
-      p.estado_practica === 'en_curso' || p.estado_practica === 'asignada'
-    );
-    
-    if (practicaActual) {
-      alert('⚠️ Ya tienes una práctica activa. Solo puedes tener una práctica a la vez.');
-      return;
-    }
-    
     setOfertaParaPostular(oferta);
     setModalPostulacion(true);
   };
@@ -2512,23 +2503,7 @@ function BuscarOfertas({ ofertas, onPostular, practicaActual }) {
 
   return (
     <div className="space-y-6">
-      {/* ✅ NUEVO: Banner de advertencia si tiene práctica activa */}
-      {practicaActual && (
-        <div className="bg-gradient-to-r from-amber-500 to-orange-500 rounded-2xl p-6 text-white shadow-xl">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-white/20 backdrop-blur rounded-xl flex items-center justify-center text-2xl">
-              ⚠️
-            </div>
-            <div className="flex-1">
-              <h3 className="text-lg font-black mb-1">Ya tienes una práctica activa</h3>
-              <p className="text-white/90">
-                Estás realizando tu práctica en <strong>{practicaActual.empresa_nombre}</strong>. 
-                Las postulaciones están bloqueadas hasta que completes tu práctica actual.
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Banner informativo removido para permitir postular aunque exista práctica activa */}
 
       <div>
         <h2 className="text-3xl font-black text-gray-900 mb-2">🔍 Buscar Ofertas</h2>
@@ -2604,8 +2579,8 @@ function BuscarOfertas({ ofertas, onPostular, practicaActual }) {
 }
 
 function OfertaCardCompleta({ oferta, onPostular, practicaActual }) {
-  const tienePracticaActiva = practicaActual !== null;
-  const puedePostular = !oferta.ya_postulado && !tienePracticaActiva;
+  const tienePracticaActiva = practicaActual !== null; // ya no bloquea UI, solo referencia informativa
+  const puedePostular = !oferta.ya_postulado;
   
   return (
     <div className="bg-white rounded-2xl shadow-lg hover:shadow-xl transition p-6">
@@ -2621,11 +2596,7 @@ function OfertaCardCompleta({ oferta, onPostular, practicaActual }) {
             ✓ Postulado
           </span>
         )}
-        {tienePracticaActiva && !oferta.ya_postulado && (
-          <span className="px-3 py-1 bg-amber-100 text-amber-700 rounded-full text-xs font-bold">
-            🔒 Bloqueado
-          </span>
-        )}
+        {/* Sin badge de bloqueo por práctica activa */}
       </div>
 
       <p className="text-sm text-gray-600 mb-4 line-clamp-2">{oferta.descripcion}</p>
@@ -2644,14 +2615,7 @@ function OfertaCardCompleta({ oferta, onPostular, practicaActual }) {
         )}
       </div>
 
-      {/* ✅ NUEVO: Mensaje explicativo si tiene práctica activa */}
-      {tienePracticaActiva && !oferta.ya_postulado && (
-        <div className="mb-4 p-3 bg-amber-50 border-l-4 border-amber-500 rounded">
-          <p className="text-sm text-amber-800">
-            <strong>⚠️ Práctica en curso:</strong> Debes completar tu práctica actual antes de postular.
-          </p>
-        </div>
-      )}
+      {/* Se elimina el mensaje que bloqueaba postulación por práctica activa */}
 
       <button 
         onClick={() => puedePostular && onPostular(oferta)}
@@ -2662,9 +2626,7 @@ function OfertaCardCompleta({ oferta, onPostular, practicaActual }) {
             : 'bg-gradient-to-r from-yellow-500 to-orange-500 text-white hover:from-yellow-600 hover:to-orange-600'
         }`}
       >
-        {oferta.ya_postulado ? '✓ Ya postulaste' : 
-         tienePracticaActiva ? '🔒 Tienes práctica activa' : 
-         '📨 Postular ahora'}
+        {oferta.ya_postulado ? '✓ Ya postulaste' : '📨 Postular'}
       </button>
     </div>
   );

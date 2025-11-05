@@ -7,6 +7,13 @@ import { useAuth } from '../../context/AuthContext';
 import FormularioOferta from '../../components/ofertas/FormularioOferta.jsx';
 //  Servicios API existentes para ofertas (listar por ahora general)
 import { getOfertas } from '../../servicios/api/ofertasService';
+// Servicios para gestionar postulaciones de la empresa (listar/aceptar/rechazar)
+import { 
+  getPostulacionesEmpresa, 
+  aceptarPostulacionEmpresa, 
+  rechazarPostulacionEmpresa,
+  getPracticantesEmpresa
+} from '../../servicios/api/empresasService';
 
 export default function DashboardEmpresa() {
   const { user, logout } = useAuth();
@@ -20,6 +27,10 @@ export default function DashboardEmpresa() {
   });
   const [ofertas, setOfertas] = useState([]);
   const [postulaciones, setPostulaciones] = useState([]);
+  // Identificador de la postulación que está siendo respondida para deshabilitar botones
+  const [respondiendoId, setRespondiendoId] = useState(null);
+  // Estado para abrir un modal con el detalle de una postulación (incluye carta de motivación)
+  const [detallePostulacion, setDetallePostulacion] = useState(null);
   const [practicantes, setPracticantes] = useState([]);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
@@ -39,20 +50,32 @@ export default function DashboardEmpresa() {
       const ofertasApi = await getOfertas();
       setOfertas(Array.isArray(ofertasApi) ? ofertasApi : []);
 
+      // Cargar postulaciones pendientes/en revisión de la empresa autenticada
+      // El backend ya filtra estados; adicionalmente aquí garantizamos array
+      const posts = await getPostulacionesEmpresa().catch(() => []);
+      const listaPost = Array.isArray(posts) ? posts : [];
+      setPostulaciones(listaPost);
+
+      // Cargar practicantes activos (prácticas asignadas / en curso)
+      const practs = await getPracticantesEmpresa().catch(() => []);
+      const listaPracts = Array.isArray(practs) ? practs : [];
+      // Calcular progreso en cliente si no viene desde API
+      const practicantesConProgreso = listaPracts.map(p => ({
+        ...p,
+        progreso: p.horas_requeridas > 0 ? Math.round((Number(p.horas_completadas || 0) / Number(p.horas_requeridas)) * 100) : 0
+      }));
+      setPracticantes(practicantesConProgreso);
+
       // Armar KPIs básicos a partir de los datos
       const activas = (ofertasApi || []).filter(o => o.estado_oferta === 'activa').length;
-      const totalPost = (ofertasApi || []).reduce((acc, o) => acc + (Number(o.total_postulaciones || o.postulaciones_count || 0)), 0);
+      const totalPostPend = (listaPost || []).filter(p => ['pendiente', 'en_revision'].includes(p.estado_postulacion)).length;
       setStats({
         ofertasActivas: activas,
-        // Nota: como no tenemos "pendientes" separado, usamos el total como aproximación
-        postulacionesPendientes: totalPost,
-        practicantesActivos: 0, // TODO: integrar endpoint real de practicantes de la empresa
+        // KPI: número de postulaciones pendientes o en revisión
+        postulacionesPendientes: totalPostPend,
+        practicantesActivos: practicantesConProgreso.length,
         evaluacionesPendientes: 0, // TODO: integrar cuando exista
       });
-
-      // ⏳ De momento dejamos postulaciones/practicantes en mock hasta tener endpoints
-      setPostulaciones([]);
-      setPracticantes([]);
 
     } catch (err) {
       console.error('Error cargando datos:', err);
@@ -64,6 +87,37 @@ export default function DashboardEmpresa() {
 
   const handleLogout = () => {
     logout();
+  };
+
+  // Aceptar una postulación: confirma con el usuario, llama API y refresca
+  const handleAceptar = async (post) => {
+    const ok = window.confirm(`Aceptar postulación de ${post.estudiante_nombre} a "${post.titulo_oferta}"?`);
+    if (!ok) return;
+    setRespondiendoId(post.id_postulacion);
+    try {
+      await aceptarPostulacionEmpresa(post.id_postulacion);
+      await cargarDatos();
+    } catch (e) {
+      alert('Error al aceptar: ' + (e.response?.data?.error || e.message));
+    } finally {
+      setRespondiendoId(null);
+    }
+  };
+
+  // Rechazar una postulación: solicita motivo opcional, llama API y refresca
+  const handleRechazar = async (post) => {
+    const comentarios = window.prompt(`Motivo de rechazo para ${post.estudiante_nombre} (opcional):`, '') || '';
+    const ok = window.confirm(`Rechazar postulación de ${post.estudiante_nombre} a "${post.titulo_oferta}"?`);
+    if (!ok) return;
+    setRespondiendoId(post.id_postulacion);
+    try {
+      await rechazarPostulacionEmpresa(post.id_postulacion, comentarios);
+      await cargarDatos();
+    } catch (e) {
+      alert('Error al rechazar: ' + (e.response?.data?.error || e.message));
+    } finally {
+      setRespondiendoId(null);
+    }
   };
 
   if (loading) {
@@ -338,7 +392,13 @@ export default function DashboardEmpresa() {
 
         {/* Sección Postulaciones */}
         {activeSection === 'postulaciones' && (
-          <SeccionPostulaciones postulaciones={postulaciones} />
+          <SeccionPostulaciones 
+            postulaciones={postulaciones} 
+            onAceptar={handleAceptar}
+            onRechazar={handleRechazar}
+            respondiendoId={respondiendoId}
+            onVerDetalle={(p) => setDetallePostulacion(p)}
+          />
         )}
 
         {/* Sección Practicantes */}
@@ -346,6 +406,16 @@ export default function DashboardEmpresa() {
           <SeccionPracticantes practicantes={practicantes} />
         )}
       </main>
+      {/* Modal de Detalle de Postulación: muestra la carta de motivación y acciones */}
+      {detallePostulacion && (
+        <ModalDetallePostulacion 
+          postulacion={detallePostulacion}
+          onClose={() => setDetallePostulacion(null)}
+          onAceptar={() => handleAceptar(detallePostulacion)}
+          onRechazar={() => handleRechazar(detallePostulacion)}
+          respondiendoId={respondiendoId}
+        />
+      )}
       {/*  Modal de creación/edición de Oferta: se muestra cuando showCrearOferta = true */}
       {showCrearOferta && (
         <FormularioOferta
@@ -558,7 +628,8 @@ function SeccionOfertas({ ofertas, onNuevaOferta }) {
 // podemos autofijar la empresa del usuario autenticado y ocultar ese select.
 
 
-function SeccionPostulaciones({ postulaciones }) {
+function SeccionPostulaciones({ postulaciones, onAceptar, onRechazar, respondiendoId, onVerDetalle }) {
+  // Renderiza la lista de postulaciones con extracto de la carta y acciones
   return (
     <div className="space-y-6">
       <div>
@@ -574,7 +645,7 @@ function SeccionPostulaciones({ postulaciones }) {
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex items-center gap-3">
                     <div className="w-12 h-12 bg-gradient-to-br from-orange-600 to-amber-600 rounded-full flex items-center justify-center">
-                      <span className="text-xl font-bold text-white">{post.estudiante_nombre.charAt(0)}</span>
+                      <span className="text-xl font-bold text-white">{post.estudiante_nombre?.charAt(0)}</span>
                     </div>
                     <div>
                       <p className="font-bold text-gray-900">{post.estudiante_nombre}</p>
@@ -583,13 +654,33 @@ function SeccionPostulaciones({ postulaciones }) {
                   </div>
                   <span className="px-3 py-1 bg-amber-100 text-amber-700 rounded-full text-xs font-bold">⏳ Pendiente</span>
                 </div>
-                <p className="text-sm text-gray-700 mb-4">Postulación a: <span className="font-semibold">{post.titulo_oferta}</span></p>
+                <p className="text-sm text-gray-700 mb-2">Postulación a: <span className="font-semibold">{post.titulo_oferta}</span></p>
+                {/* Extracto de la carta de motivación para vista rápida */}
+                <p className="text-sm text-gray-600 mb-4">
+                  {(post.carta_motivacion && post.carta_motivacion.length > 0)
+                    ? `${post.carta_motivacion.slice(0, 140)}${post.carta_motivacion.length > 140 ? '…' : ''}`
+                    : 'Sin carta de motivación'}
+                </p>
                 <div className="flex gap-3">
-                  <button className="flex-1 px-4 py-2 bg-emerald-600 text-white rounded-xl font-semibold hover:bg-emerald-700 transition">
-                    ✓ Aceptar
+                  {/* Botón para abrir el modal con detalle completo */}
+                  <button
+                    onClick={() => onVerDetalle && onVerDetalle(post)}
+                    className="px-4 py-2 bg-white text-gray-700 border border-gray-300 rounded-xl font-semibold hover:bg-gray-50 transition">
+                    Ver detalle
                   </button>
-                  <button className="flex-1 px-4 py-2 bg-gray-200 text-gray-700 rounded-xl font-semibold hover:bg-gray-300 transition">
-                    ✗ Rechazar
+                  {/* Aceptar postulación */}
+                  <button
+                    disabled={respondiendoId === post.id_postulacion}
+                    onClick={() => onAceptar(post)}
+                    className="flex-1 px-4 py-2 bg-emerald-600 text-white rounded-xl font-semibold hover:bg-emerald-700 transition disabled:opacity-50">
+                    {respondiendoId === post.id_postulacion ? 'Procesando...' : '✓ Aceptar'}
+                  </button>
+                  {/* Rechazar postulación */}
+                  <button
+                    disabled={respondiendoId === post.id_postulacion}
+                    onClick={() => onRechazar(post)}
+                    className="flex-1 px-4 py-2 bg-gray-200 text-gray-700 rounded-xl font-semibold hover:bg-gray-300 transition disabled:opacity-50">
+                    {respondiendoId === post.id_postulacion ? 'Procesando...' : '✗ Rechazar'}
                   </button>
                 </div>
               </div>
@@ -629,6 +720,57 @@ function SeccionPracticantes({ practicantes }) {
             <p className="text-sm text-gray-600">Acepta postulaciones para iniciar prácticas</p>
           </div>
         )}
+      </div>
+    </div>
+  );
+}
+
+// Modal sencillo para ver el detalle de la postulación, incluida la carta de motivación
+function ModalDetallePostulacion({ postulacion, onClose, onAceptar, onRechazar, respondiendoId }) {
+  if (!postulacion) return null;
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+      <div className="bg-white w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden">
+        {/* Encabezado */}
+        <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+          <div>
+            <h3 className="text-xl font-black text-gray-900">Detalle de Postulación</h3>
+            <p className="text-sm text-gray-600">{postulacion.estudiante_nombre} • {postulacion.especialidad}</p>
+          </div>
+          <button onClick={onClose} className="text-gray-500 hover:text-gray-700 font-bold">×</button>
+        </div>
+
+        {/* Contenido */}
+        <div className="px-6 py-5 space-y-4 max-h-[70vh] overflow-y-auto">
+          <div>
+            <p className="text-sm text-gray-600">Oferta</p>
+            <p className="font-semibold text-gray-900">{postulacion.titulo_oferta}</p>
+          </div>
+          <div>
+            <p className="text-sm text-gray-600 mb-1">Carta de motivación</p>
+            <div className="p-4 bg-gray-50 rounded-xl border border-gray-200 whitespace-pre-wrap text-sm text-gray-800">
+              {postulacion.carta_motivacion || 'Sin carta de motivación'}
+            </div>
+          </div>
+          <div className="text-xs text-gray-500">Fecha de postulación: {new Date(postulacion.fecha_postulacion).toLocaleString('es-CL')}</div>
+        </div>
+
+        {/* Acciones */}
+        <div className="px-6 py-4 border-t border-gray-200 flex items-center justify-end gap-3 bg-gray-50">
+          <button onClick={onClose} className="px-4 py-2 bg-white border border-gray-300 rounded-xl font-semibold text-gray-700 hover:bg-gray-100">Cerrar</button>
+          <button
+            disabled={respondiendoId === postulacion.id_postulacion}
+            onClick={onRechazar}
+            className="px-4 py-2 bg-gray-200 text-gray-700 rounded-xl font-semibold hover:bg-gray-300 transition disabled:opacity-50">
+            {respondiendoId === postulacion.id_postulacion ? 'Procesando...' : '✗ Rechazar'}
+          </button>
+          <button
+            disabled={respondiendoId === postulacion.id_postulacion}
+            onClick={onAceptar}
+            className="px-4 py-2 bg-emerald-600 text-white rounded-xl font-semibold hover:bg-emerald-700 transition disabled:opacity-50">
+            {respondiendoId === postulacion.id_postulacion ? 'Procesando...' : '✓ Aceptar'}
+          </button>
+        </div>
       </div>
     </div>
   );

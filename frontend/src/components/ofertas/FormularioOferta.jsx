@@ -3,8 +3,11 @@
 
 import { useState, useEffect } from 'react';
 import { createOferta, updateOferta, getEmpresas, getEspecialidades } from '../../servicios/api/ofertasService';
+import { getMiEmpresa } from '../../servicios/api/empresasService';
+import { useAuth } from '../../context/AuthContext';
 
 export default function FormularioOferta({ oferta, onClose, onSuccess }) {
+  const { user } = useAuth();
   const [formData, setFormData] = useState({
     id_empresa: '',
     id_especialidad: '',
@@ -26,6 +29,7 @@ export default function FormularioOferta({ oferta, onClose, onSuccess }) {
 
   const [empresas, setEmpresas] = useState([]);
   const [especialidades, setEspecialidades] = useState([]);
+  const [miEmpresa, setMiEmpresa] = useState(null);
   const [loading, setLoading] = useState(false);
   const [softLoading, setSoftLoading] = useState(true);
   const [error, setError] = useState('');
@@ -73,6 +77,18 @@ export default function FormularioOferta({ oferta, onClose, onSuccess }) {
           beneficios: oferta.beneficios || '',
           estado_oferta: oferta.estado_oferta || 'activa'
         });
+      } else {
+        // Si estamos creando desde el dashboard de empresa, preseleccionar su empresa y fijarla
+        try {
+          const miEmp = await getMiEmpresa();
+          if (miEmp?.id_empresa) {
+            setMiEmpresa(miEmp);
+            setFormData((prev) => ({ ...prev, id_empresa: miEmp.id_empresa }));
+          }
+        } catch (e) {
+          // Silencioso: si falla, el usuario podrá escoger manualmente
+          console.debug('No se pudo preseleccionar empresa:', e?.response?.data || e?.message);
+        }
       }
       setSoftLoading(false);
     };
@@ -234,7 +250,10 @@ export default function FormularioOferta({ oferta, onClose, onSuccess }) {
               <p className="text-gray-300 flex items-center gap-1.5 text-sm">
                 <span>🏢</span>
                 <span className="truncate">
-                  {empresas.find((e) => String(e.id_empresa) === String(formData.id_empresa))?.razon_social || 'Selecciona empresa'}
+                  {miEmpresa?.nombre_comercial
+                    || empresas.find((e) => String(e.id_empresa) === String(formData.id_empresa))?.nombre_comercial
+                    || empresas.find((e) => String(e.id_empresa) === String(formData.id_empresa))?.razon_social
+                    || 'Selecciona empresa'}
                 </span>
               </p>
             </div>
@@ -290,18 +309,27 @@ export default function FormularioOferta({ oferta, onClose, onSuccess }) {
                 <label className="block text-xs text-gray-600 font-semibold uppercase mb-2">
                   Empresa <span className="text-red-500">*</span>
                 </label>
-                <select
-                  name="id_empresa"
-                  value={formData.id_empresa}
-                  onChange={handleChange}
-                  required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-500"
-                >
-                  <option value="">Seleccione empresa</option>
-                  {empresas.map(emp => (
-                    <option key={emp.id_empresa} value={emp.id_empresa}>{emp.razon_social}</option>
-                  ))}
-                </select>
+                {oferta ? (
+                  <select
+                    name="id_empresa"
+                    value={formData.id_empresa}
+                    onChange={handleChange}
+                    required
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-500"
+                  >
+                    <option value="">Seleccione empresa</option>
+                    {empresas.map(emp => (
+                      <option key={emp.id_empresa} value={emp.id_empresa}>{emp.nombre_comercial || emp.razon_social}</option>
+                    ))}
+                  </select>
+                ) : (
+                  <div className="w-full px-3 py-2 border border-gray-200 rounded-lg bg-gray-50 text-gray-800 font-semibold">
+                    {miEmpresa?.nombre_comercial
+                      || empresas.find((e) => String(e.id_empresa) === String(formData.id_empresa))?.nombre_comercial
+                      || empresas.find((e) => String(e.id_empresa) === String(formData.id_empresa))?.razon_social
+                      || 'Empresa no disponible'}
+                  </div>
+                )}
                 {errors.id_empresa && <p className="text-red-500 text-xs mt-2">{errors.id_empresa}</p>}
               </div>
 

@@ -9,6 +9,12 @@ export const getEmpresas = async (params = {}) => {
   return response.data;
 };
 
+// Obtener la empresa asociada al usuario autenticado
+export const getMiEmpresa = async () => {
+  const { data } = await api.get('/empresas/mia');
+  return data; // { id_empresa, nombre_comercial, ... }
+};
+
 // Obtener una empresa por ID
 export const getEmpresa = async (id) => {
   const response = await api.get(`/empresas/${id}`);
@@ -37,4 +43,31 @@ export const deleteEmpresa = async (id) => {
 export const getEstadisticasEmpresas = async () => {
   const response = await api.get('/empresas/estadisticas');
   return response.data;
+};
+
+// ==================== Postulaciones de la empresa ====================
+// Listar postulaciones asociadas a las ofertas de la empresa autenticada
+// Nota: el backend deduce la empresa desde el token (usuario -> usuarios_empresa -> id_empresa)
+export const getPostulacionesEmpresa = async () => {
+  const { data } = await api.get('/empresas/postulaciones');
+  return Array.isArray(data) ? data : (data?.postulaciones || []);
+};
+
+// Aceptar una postulación: cambia estado y crea práctica vinculada en backend
+export const aceptarPostulacionEmpresa = async (id_postulacion, comentarios = '') => {
+  const { data } = await api.put(`/empresas/postulaciones/${id_postulacion}/aceptar`, { comentarios });
+  return data;
+};
+
+// Rechazar una postulación con comentarios opcionales
+export const rechazarPostulacionEmpresa = async (id_postulacion, comentarios = '') => {
+  const { data } = await api.put(`/empresas/postulaciones/${id_postulacion}/rechazar`, { comentarios });
+  return data;
+};
+
+// ==================== Practicantes de la empresa ====================
+// Lista prácticas activas (asignadas o en curso) asociadas a las ofertas de la empresa
+export const getPracticantesEmpresa = async () => {
+  const { data } = await api.get('/empresas/practicantes');
+  return Array.isArray(data) ? data : (data?.practicantes || []);
 };
