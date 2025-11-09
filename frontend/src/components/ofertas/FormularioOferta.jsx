@@ -8,6 +8,9 @@ import { useAuth } from '../../context/AuthContext';
 
 export default function FormularioOferta({ oferta, onClose, onSuccess }) {
   const { user } = useAuth();
+  // Detecta si el usuario autenticado es del tipo "empresa" (normalizado)
+  const isEmpresa = String(user?.tipo_usuario || user?.rol || user?.role || '')
+    .toLowerCase() === 'empresa';
   const [formData, setFormData] = useState({
     id_empresa: '',
     id_especialidad: '',
@@ -77,8 +80,8 @@ export default function FormularioOferta({ oferta, onClose, onSuccess }) {
           beneficios: oferta.beneficios || '',
           estado_oferta: oferta.estado_oferta || 'activa'
         });
-      } else {
-        // Si estamos creando desde el dashboard de empresa, preseleccionar su empresa y fijarla
+      } else if (isEmpresa) {
+        // Si se crea desde una cuenta de empresa: fijar automáticamente su empresa
         try {
           const miEmp = await getMiEmpresa();
           if (miEmp?.id_empresa) {
@@ -86,14 +89,17 @@ export default function FormularioOferta({ oferta, onClose, onSuccess }) {
             setFormData((prev) => ({ ...prev, id_empresa: miEmp.id_empresa }));
           }
         } catch (e) {
-          // Silencioso: si falla, el usuario podrá escoger manualmente
+          // Silencioso: si falla, el usuario podrá escoger manualmente (solo si no es empresa)
           console.debug('No se pudo preseleccionar empresa:', e?.response?.data || e?.message);
         }
+      } else {
+        // Admin u otros roles: no fijamos empresa (selector disponible)
+        setMiEmpresa(null);
       }
       setSoftLoading(false);
     };
     init();
-  }, [oferta?.id_oferta]);
+  }, [oferta?.id_oferta, isEmpresa]);
 
   const fetchData = async () => {
     try {
@@ -309,7 +315,16 @@ export default function FormularioOferta({ oferta, onClose, onSuccess }) {
                 <label className="block text-xs text-gray-600 font-semibold uppercase mb-2">
                   Empresa <span className="text-red-500">*</span>
                 </label>
-                {oferta ? (
+                {isEmpresa ? (
+                  // Usuario empresa: campo fijo (no seleccionable)
+                  <div className="w-full px-3 py-2 border border-gray-200 rounded-lg bg-gray-50 text-gray-800 font-semibold">
+                    {miEmpresa?.nombre_comercial
+                      || empresas.find((e) => String(e.id_empresa) === String(formData.id_empresa))?.nombre_comercial
+                      || empresas.find((e) => String(e.id_empresa) === String(formData.id_empresa))?.razon_social
+                      || 'Empresa no disponible'}
+                  </div>
+                ) : (
+                  // Admin u otros roles: selector disponible
                   <select
                     name="id_empresa"
                     value={formData.id_empresa}
@@ -322,13 +337,6 @@ export default function FormularioOferta({ oferta, onClose, onSuccess }) {
                       <option key={emp.id_empresa} value={emp.id_empresa}>{emp.nombre_comercial || emp.razon_social}</option>
                     ))}
                   </select>
-                ) : (
-                  <div className="w-full px-3 py-2 border border-gray-200 rounded-lg bg-gray-50 text-gray-800 font-semibold">
-                    {miEmpresa?.nombre_comercial
-                      || empresas.find((e) => String(e.id_empresa) === String(formData.id_empresa))?.nombre_comercial
-                      || empresas.find((e) => String(e.id_empresa) === String(formData.id_empresa))?.razon_social
-                      || 'Empresa no disponible'}
-                  </div>
                 )}
                 {errors.id_empresa && <p className="text-red-500 text-xs mt-2">{errors.id_empresa}</p>}
               </div>
