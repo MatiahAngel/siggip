@@ -804,7 +804,8 @@ export const validarActividadBitacora = async (req, res) => {
     }
 
     const actividad = verificacion[0];
-    const horasValidas = horas_validadas ?? actividad.duracion_horas;
+    // ⬇️ CONVERTIR A ENTERO redondeando
+    const horasValidas = Math.round(horas_validadas ?? actividad.duracion_horas);
 
     // Actualizar usando el nombre real de la columna
     await sequelize.query(
@@ -826,7 +827,7 @@ export const validarActividadBitacora = async (req, res) => {
     if (aprobada) {
       await sequelize.query(
         `UPDATE siggip.practicas
-         SET horas_completadas = horas_completadas + :horas
+         SET horas_completadas = horas_completadas + :horas::integer
          WHERE id_practica = :id_practica`,
         {
           replacements: { id_practica: actividad.id_practica, horas: horasValidas },
