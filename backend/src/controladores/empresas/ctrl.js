@@ -79,34 +79,28 @@ export const create = async (req, res) => {
       cargo_contacto,
       fecha_convenio,
       estado_empresa,
-      // Nuevos campos para crear usuario
-      crear_usuario = true, // Por defecto crear usuario
+      crear_usuario = true,
       password_usuario,
     } = req.body;
 
-    // Validaciones básicas
     if (!rut_empresa || !razon_social) {
       return res.status(400).json({ error: 'RUT y razón social son obligatorios' });
     }
 
-    // Validar formato RUT
     const rutRegex = /^[0-9]{7,8}-[0-9Kk]$/;
     if (!rutRegex.test(rut_empresa)) {
       return res.status(400).json({ error: 'Formato de RUT inválido. Use formato: 12345678-9' });
     }
 
-    // Validar email si se proporciona
     if (email_contacto && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email_contacto)) {
       return res.status(400).json({ error: 'Email de contacto inválido' });
     }
 
-    // Verificar RUT único
     const existeRut = await Empresa.findOne({ where: { rut_empresa } });
     if (existeRut) {
       return res.status(400).json({ error: 'El RUT de empresa ya está registrado' });
     }
 
-    // Si se va a crear usuario, validar email único
     if (crear_usuario && email_contacto) {
       const checkEmail = await pool.query(
         'SELECT id_usuario FROM siggip.usuarios WHERE email = $1',
@@ -117,7 +111,6 @@ export const create = async (req, res) => {
       }
     }
 
-    // Crear empresa usando Sequelize
     const nuevaEmpresa = await Empresa.create({
       rut_empresa,
       razon_social,
@@ -135,20 +128,16 @@ export const create = async (req, res) => {
       estado_empresa: estado_empresa || 'activa',
     });
 
-    // ✅ CREAR USUARIO DE EMPRESA Y VINCULARLO
     if (crear_usuario && email_contacto && contacto_principal) {
       try {
-        // Generar contraseña por defecto si no se proporciona
-        const password = password_usuario || 'Empresa123!'; // Cambiar por política de tu empresa
+        const password = password_usuario || 'Empresa123!';
         const passwordHash = await bcrypt.hash(password, 10);
 
-        // Dividir nombre del contacto en partes
         const nombreParts = contacto_principal.trim().split(' ');
         const nombre = nombreParts[0] || 'Empresa';
         const apellido_paterno = nombreParts[1] || razon_social.split(' ')[0];
         const apellido_materno = nombreParts[2] || '';
 
-        // Crear usuario
         const insertUsuario = await pool.query(
           `INSERT INTO siggip.usuarios 
            (email, password_hash, nombre, apellido_paterno, apellido_materno, rut, tipo_usuario, estado) 
@@ -160,7 +149,7 @@ export const create = async (req, res) => {
             nombre,
             apellido_paterno,
             apellido_materno,
-            rut_empresa, // Usar RUT de empresa como RUT del usuario
+            rut_empresa,
             'empresa',
             'activo'
           ]
@@ -168,7 +157,6 @@ export const create = async (req, res) => {
 
         const id_usuario = insertUsuario.rows[0].id_usuario;
 
-        // Vincular usuario con empresa en usuarios_empresa
         await pool.query(
           `INSERT INTO siggip.usuarios_empresa 
            (id_usuario, id_empresa, cargo_usuario, es_contacto_principal) 
@@ -184,8 +172,6 @@ export const create = async (req, res) => {
         console.log(`✅ Usuario creado y vinculado a empresa ${razon_social}`);
       } catch (errorUsuario) {
         console.error('Error al crear usuario de empresa:', errorUsuario);
-        // No fallar la creación de empresa si falla el usuario
-        // Solo registrar el error
       }
     }
 
@@ -223,7 +209,6 @@ export const update = async (req, res) => {
     const empresa = await Empresa.findByPk(id);
     if (!empresa) return res.status(404).json({ error: 'Empresa no encontrada' });
 
-    // Validar RUT si cambió
     if (rut_empresa && rut_empresa !== empresa.rut_empresa) {
       const rutRegex = /^[0-9]{7,8}-[0-9Kk]$/;
       if (!rutRegex.test(rut_empresa)) {
@@ -235,7 +220,6 @@ export const update = async (req, res) => {
       }
     }
 
-    // Validar email si cambió
     if (email_contacto && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email_contacto)) {
       return res.status(400).json({ error: 'Email de contacto inválido' });
     }
@@ -274,7 +258,6 @@ export const deleteEmpresa = async (req, res) => {
 
     await empresa.update({ estado_empresa: 'inactiva' });
 
-    // También desactivar usuarios asociados
     await pool.query(
       `UPDATE siggip.usuarios 
        SET estado = 'inactivo' 
@@ -305,10 +288,8 @@ export const getEstadisticas = async (_req, res) => {
   }
 };
 
-// ==================== Postulaciones de Empresa ====================
-// Obtiene el id_empresa asociado al usuario autenticado
+// ==================== Función Helper ====================
 async function getIdEmpresaFromUsuario(id_usuario) {
-  // 1) Intento directo por tabla de mapeo usuarios_empresa
   const direct = await pool.query(
     `SELECT id_empresa
      FROM siggip.usuarios_empresa
@@ -319,7 +300,6 @@ async function getIdEmpresaFromUsuario(id_usuario) {
   );
   if (direct.rows.length > 0) return direct.rows[0].id_empresa;
 
-  // 2) Fallback: buscar email y rut del usuario
   const ures = await pool.query(
     `SELECT email, rut
      FROM siggip.usuarios
@@ -330,7 +310,6 @@ async function getIdEmpresaFromUsuario(id_usuario) {
   if (ures.rows.length === 0) return null;
   const { email, rut } = ures.rows[0];
 
-  // 3) Fallback por email de contacto de la empresa
   if (email) {
     const e1 = await pool.query(
       `SELECT id_empresa
@@ -342,7 +321,6 @@ async function getIdEmpresaFromUsuario(id_usuario) {
     if (e1.rows.length > 0) return e1.rows[0].id_empresa;
   }
 
-  // 4) Fallback por RUT de empresa = RUT del usuario
   if (rut) {
     const e2 = await pool.query(
       `SELECT id_empresa
@@ -357,7 +335,8 @@ async function getIdEmpresaFromUsuario(id_usuario) {
   return null;
 }
 
-// Listar postulaciones recibidas para las ofertas de la empresa
+// ==================== Postulaciones ====================
+
 export const listarPostulacionesEmpresa = async (req, res) => {
   try {
     const id_usuario = req.usuario?.id;
@@ -395,7 +374,62 @@ export const listarPostulacionesEmpresa = async (req, res) => {
   }
 };
 
-// Aceptar una postulación: marca aceptada y crea la práctica en una transacción
+export const getDetallePostulante = async (req, res) => {
+  try {
+    const id_usuario = req.usuario?.id;
+    const id_empresa = await getIdEmpresaFromUsuario(id_usuario);
+    if (!id_empresa) return res.status(403).json({ error: 'Usuario no asociado a ninguna empresa' });
+
+    const { id_postulacion } = req.params;
+
+    const query = `
+      SELECT 
+        p.id_postulacion,
+        p.estado_postulacion,
+        p.fecha_postulacion,
+        p.carta_motivacion,
+        p.comentarios_seleccion,
+        o.id_oferta,
+        o.titulo_oferta,
+        o.duracion_horas,
+        o.descripcion_oferta,
+        u.id_usuario,
+        u.nombre,
+        u.apellido_paterno,
+        u.apellido_materno,
+        u.email,
+        u.rut,
+        est.id_estudiante,
+        est.telefono,
+        est.direccion,
+        est.fecha_nacimiento,
+        esp.id_especialidad,
+        esp.nombre_especialidad AS especialidad,
+        esp.codigo_especialidad
+      FROM siggip.postulaciones p
+      JOIN siggip.ofertas_practica o ON o.id_oferta = p.id_oferta
+      JOIN siggip.estudiantes est ON est.id_estudiante = p.id_estudiante
+      JOIN siggip.usuarios u ON u.id_usuario = est.id_usuario
+      JOIN siggip.especialidades esp ON esp.id_especialidad = est.id_especialidad
+      WHERE p.id_postulacion = :id_postulacion
+        AND o.id_empresa = :id_empresa`;
+
+    const resultado = await sequelize.query(query, {
+      replacements: { id_postulacion, id_empresa },
+      type: sequelize.QueryTypes.SELECT
+    });
+
+    if (resultado.length === 0) {
+      return res.status(404).json({ error: 'Postulación no encontrada' });
+    }
+
+    return res.json(resultado[0]);
+  } catch (error) {
+    console.error('Error al obtener detalle del postulante:', error);
+    return res.status(500).json({ error: 'Error al obtener detalle del postulante' });
+  }
+};
+
 export const aceptarPostulacionEmpresa = async (req, res) => {
   const t = await sequelize.transaction();
   try {
@@ -409,7 +443,6 @@ export const aceptarPostulacionEmpresa = async (req, res) => {
     const { id_postulacion } = req.params;
     const { comentarios = '' } = req.body || {};
 
-    // Validar pertenencia, estado y cupos
     const sel = await sequelize.query(
       `SELECT p.id_postulacion, p.id_estudiante, p.id_oferta, p.estado_postulacion,
               o.id_empresa, o.fecha_inicio, o.cupos_disponibles
@@ -438,7 +471,6 @@ export const aceptarPostulacionEmpresa = async (req, res) => {
       return res.status(400).json({ error: 'Sin cupos disponibles para la oferta' });
     }
 
-    // Marcar postulación como aceptada
     await sequelize.query(
       `UPDATE siggip.postulaciones
        SET estado_postulacion = 'aceptada', fecha_respuesta = CURRENT_TIMESTAMP, comentarios_seleccion = :comentarios
@@ -446,7 +478,6 @@ export const aceptarPostulacionEmpresa = async (req, res) => {
       { replacements: { id_postulacion, comentarios }, type: sequelize.QueryTypes.UPDATE, transaction: t }
     );
 
-    // Crear práctica asociada
     await sequelize.query(
       `INSERT INTO siggip.practicas (
         id_estudiante, id_oferta, fecha_inicio_practica, fecha_asignacion, estado_practica, horas_completadas
@@ -456,7 +487,6 @@ export const aceptarPostulacionEmpresa = async (req, res) => {
       { replacements: { id_estudiante: post.id_estudiante, id_oferta: post.id_oferta, fecha_inicio: post.fecha_inicio }, type: sequelize.QueryTypes.INSERT, transaction: t }
     );
 
-    // Decrementar cupos de la oferta
     await sequelize.query(
       `UPDATE siggip.ofertas_practica SET cupos_disponibles = cupos_disponibles - 1 WHERE id_oferta = :id_oferta`,
       { replacements: { id_oferta: post.id_oferta }, type: sequelize.QueryTypes.UPDATE, transaction: t }
@@ -471,7 +501,6 @@ export const aceptarPostulacionEmpresa = async (req, res) => {
   }
 };
 
-// Rechazar una postulación
 export const rechazarPostulacionEmpresa = async (req, res) => {
   try {
     const id_usuario = req.usuario?.id;
@@ -492,7 +521,6 @@ export const rechazarPostulacionEmpresa = async (req, res) => {
       { replacements: { id_postulacion, id_empresa, comentarios }, type: sequelize.QueryTypes.UPDATE }
     );
 
-    // sequelize.query con UPDATE retorna [affectedCount]
     const affected = Array.isArray(result) ? result[1] ?? result[0] : result;
     if (!affected) {
       return res.status(400).json({ error: 'Postulación no encontrada o estado inválido' });
@@ -505,7 +533,8 @@ export const rechazarPostulacionEmpresa = async (req, res) => {
   }
 };
 
-// Listar practicantes activos de la empresa (prácticas creadas por aceptación)
+// ==================== Practicantes ====================
+
 export const listarPracticantesEmpresa = async (req, res) => {
   try {
     const id_usuario = req.usuario?.id;
@@ -535,7 +564,6 @@ export const listarPracticantesEmpresa = async (req, res) => {
       type: sequelize.QueryTypes.SELECT
     });
 
-    // Se puede calcular el progreso en el frontend; devolvemos datos crudos
     return res.json(resultado);
   } catch (error) {
     console.error('Error al listar practicantes de empresa:', error);
@@ -543,7 +571,605 @@ export const listarPracticantesEmpresa = async (req, res) => {
   }
 };
 
-// Obtener la empresa asociada al usuario autenticado (según token)
+export const getPlanPractica = async (req, res) => {
+  try {
+    const id_usuario = req.usuario?.id;
+    const id_empresa = await getIdEmpresaFromUsuario(id_usuario);
+    if (!id_empresa) return res.status(403).json({ error: 'Usuario no asociado a ninguna empresa' });
+
+    const { id_practica } = req.params;
+
+    const verificacion = await sequelize.query(
+      `SELECT pr.id_practica
+       FROM siggip.practicas pr
+       JOIN siggip.ofertas_practica o ON o.id_oferta = pr.id_oferta
+       WHERE pr.id_practica = :id_practica AND o.id_empresa = :id_empresa`,
+      { replacements: { id_practica, id_empresa }, type: sequelize.QueryTypes.SELECT }
+    );
+
+    if (verificacion.length === 0) {
+      return res.status(404).json({ error: 'Práctica no encontrada o no autorizada' });
+    }
+
+    const query = `
+      SELECT 
+        pp.id_plan_practica,
+        pp.id_practica,
+        pp.fecha_creacion AS fecha_creacion_plan,
+        pr.id_estudiante,
+        pr.id_oferta,
+        esp.id_especialidad,
+        esp.nombre_especialidad
+      FROM siggip.planes_practica pp
+      JOIN siggip.practicas pr ON pr.id_practica = pp.id_practica
+      JOIN siggip.estudiantes est ON est.id_estudiante = pr.id_estudiante
+      JOIN siggip.especialidades esp ON esp.id_especialidad = est.id_especialidad
+      WHERE pp.id_practica = :id_practica`;
+
+    const plan = await sequelize.query(query, {
+      replacements: { id_practica },
+      type: sequelize.QueryTypes.SELECT
+    });
+
+    if (plan.length === 0) {
+      return res.status(404).json({ error: 'Plan de práctica no encontrado' });
+    }
+
+    const areas = await sequelize.query(
+      `SELECT 
+        ppa.id_plan_area,
+        ppa.activa AS area_activa,
+        ac.id_area_competencia,
+        ac.nombre_area,
+        ac.descripcion_area
+       FROM siggip.plan_practica_areas ppa
+       JOIN siggip.areas_competencia ac ON ac.id_area_competencia = ppa.id_area_competencia
+       WHERE ppa.id_plan_practica = :id_plan_practica
+       ORDER BY ac.nombre_area`,
+      { replacements: { id_plan_practica: plan[0].id_plan_practica }, type: sequelize.QueryTypes.SELECT }
+    );
+
+    for (let area of areas) {
+      const tareas = await sequelize.query(
+        `SELECT 
+          ppt.id_plan_tarea,
+          ppt.activa AS tarea_activa,
+          ppt.completada,
+          ppt.fecha_completado,
+          t.id_tarea_competencia,
+          t.descripcion_tarea,
+          t.horas_estimadas
+         FROM siggip.plan_practica_tareas ppt
+         JOIN siggip.tareas_competencia t ON t.id_tarea_competencia = ppt.id_tarea_competencia
+         WHERE ppt.id_plan_area = :id_plan_area
+         ORDER BY t.descripcion_tarea`,
+        { replacements: { id_plan_area: area.id_plan_area }, type: sequelize.QueryTypes.SELECT }
+      );
+      area.tareas = tareas;
+    }
+
+    return res.json({
+      ...plan[0],
+      areas
+    });
+  } catch (error) {
+    console.error('Error al obtener plan de práctica:', error);
+    return res.status(500).json({ error: 'Error al obtener plan de práctica' });
+  }
+};
+
+export const actualizarPlanPractica = async (req, res) => {
+  const t = await sequelize.transaction();
+  try {
+    const id_usuario = req.usuario?.id;
+    const id_empresa = await getIdEmpresaFromUsuario(id_usuario);
+    if (!id_empresa) {
+      await t.rollback();
+      return res.status(403).json({ error: 'Usuario no asociado a ninguna empresa' });
+    }
+
+    const { id_practica } = req.params;
+    const { areas } = req.body;
+
+    const verificacion = await sequelize.query(
+      `SELECT pr.id_practica
+       FROM siggip.practicas pr
+       JOIN siggip.ofertas_practica o ON o.id_oferta = pr.id_oferta
+       WHERE pr.id_practica = :id_practica AND o.id_empresa = :id_empresa`,
+      { replacements: { id_practica, id_empresa }, type: sequelize.QueryTypes.SELECT, transaction: t }
+    );
+
+    if (verificacion.length === 0) {
+      await t.rollback();
+      return res.status(404).json({ error: 'Práctica no encontrada o no autorizada' });
+    }
+
+    if (areas && Array.isArray(areas)) {
+      for (let area of areas) {
+        if (area.id_plan_area) {
+          await sequelize.query(
+            `UPDATE siggip.plan_practica_areas SET activa = :activa WHERE id_plan_area = :id_plan_area`,
+            { replacements: { id_plan_area: area.id_plan_area, activa: area.activa }, type: sequelize.QueryTypes.UPDATE, transaction: t }
+          );
+
+          if (area.tareas && Array.isArray(area.tareas)) {
+            for (let tarea of area.tareas) {
+              if (tarea.id_plan_tarea) {
+                await sequelize.query(
+                  `UPDATE siggip.plan_practica_tareas SET activa = :activa WHERE id_plan_tarea = :id_plan_tarea`,
+                  { replacements: { id_plan_tarea: tarea.id_plan_tarea, activa: tarea.activa }, type: sequelize.QueryTypes.UPDATE, transaction: t }
+                );
+              }
+            }
+          }
+        }
+      }
+    }
+
+    await t.commit();
+    return res.json({ success: true, message: 'Plan de práctica actualizado' });
+  } catch (error) {
+    await t.rollback();
+    console.error('Error al actualizar plan de práctica:', error);
+    return res.status(500).json({ error: 'Error al actualizar plan de práctica' });
+  }
+};
+
+// 📁 UBICACIÓN: backend/src/controladores/empresas/ctrl.js
+// REEMPLAZA la función getBitacoraPracticante
+
+export const getBitacoraPracticante = async (req, res) => {
+  try {
+    const id_usuario = req.usuario?.id;
+    const id_empresa = await getIdEmpresaFromUsuario(id_usuario);
+    if (!id_empresa) return res.status(403).json({ error: 'Usuario no asociado a ninguna empresa' });
+
+    const { id_practica } = req.params;
+
+    // Verificar autorización
+    const verificacion = await sequelize.query(
+      `SELECT pr.id_practica
+       FROM siggip.practicas pr
+       JOIN siggip.ofertas_practica o ON o.id_oferta = pr.id_oferta
+       WHERE pr.id_practica = :id_practica AND o.id_empresa = :id_empresa`,
+      { replacements: { id_practica, id_empresa }, type: sequelize.QueryTypes.SELECT }
+    );
+
+    if (verificacion.length === 0) {
+      return res.status(404).json({ error: 'Práctica no encontrada o no autorizada' });
+    }
+
+    // Query usando los nombres REALES de las columnas
+    const query = `
+      SELECT 
+        ba.id_bitacora as id_actividad_bitacora,
+        ba.fecha_actividad,
+        ba.descripcion_actividad,
+        ba.duracion_horas as horas_dedicadas,
+        ba.equipos_utilizados,
+        ba.herramientas_utilizadas,
+        ba.normas_seguridad_aplicadas,
+        ba.observaciones,
+        ba.validado_por_empresa as validada_empresa,
+        '' as comentarios_empresa,
+        NULL as fecha_validacion_empresa,
+        ba.duracion_horas as horas_validadas,
+        ba.fecha_registro,
+        '' as aprendizajes_logrados,
+        '' as dificultades_encontradas,
+        CASE 
+          WHEN ba.validado_por_empresa = true THEN 'validada'
+          WHEN ba.validado_por_empresa = false THEN 'pendiente'
+          ELSE 'pendiente'
+        END as estado_actividad
+      FROM siggip.bitacora_actividades ba
+      WHERE ba.id_practica = :id_practica
+      ORDER BY ba.fecha_actividad DESC, ba.fecha_registro DESC`;
+
+    const actividades = await sequelize.query(query, {
+      replacements: { id_practica },
+      type: sequelize.QueryTypes.SELECT
+    });
+
+    console.log(`✅ Bitácora cargada: ${actividades.length} actividades`);
+
+    return res.json(actividades);
+  } catch (error) {
+    console.error('Error al obtener bitácora:', error);
+    return res.status(500).json({ error: 'Error al obtener bitácora' });
+  }
+};
+
+export const validarActividadBitacora = async (req, res) => {
+  try {
+    const id_usuario = req.usuario?.id;
+    const id_empresa = await getIdEmpresaFromUsuario(id_usuario);
+    if (!id_empresa) return res.status(403).json({ error: 'Usuario no asociado a ninguna empresa' });
+
+    const { id_actividad } = req.params;
+    const { aprobada, comentarios = '', horas_validadas } = req.body;
+
+    // Verificar que la actividad pertenece a una práctica de la empresa
+    const verificacion = await sequelize.query(
+      `SELECT ba.id_bitacora, ba.id_practica, ba.duracion_horas
+       FROM siggip.bitacora_actividades ba
+       JOIN siggip.practicas pr ON pr.id_practica = ba.id_practica
+       JOIN siggip.ofertas_practica o ON o.id_oferta = pr.id_oferta
+       WHERE ba.id_bitacora = :id_actividad AND o.id_empresa = :id_empresa`,
+      { replacements: { id_actividad, id_empresa }, type: sequelize.QueryTypes.SELECT }
+    );
+
+    if (verificacion.length === 0) {
+      return res.status(404).json({ error: 'Actividad no encontrada o no autorizada' });
+    }
+
+    const actividad = verificacion[0];
+    const horasValidas = horas_validadas ?? actividad.duracion_horas;
+
+    // Actualizar usando el nombre real de la columna
+    await sequelize.query(
+      `UPDATE siggip.bitacora_actividades
+       SET validado_por_empresa = :aprobada,
+           observaciones = COALESCE(:comentarios, observaciones)
+       WHERE id_bitacora = :id_actividad`,
+      {
+        replacements: {
+          id_actividad,
+          aprobada,
+          comentarios
+        },
+        type: sequelize.QueryTypes.UPDATE
+      }
+    );
+
+    // Si se aprueba, actualizar horas completadas de la práctica
+    if (aprobada) {
+      await sequelize.query(
+        `UPDATE siggip.practicas
+         SET horas_completadas = horas_completadas + :horas
+         WHERE id_practica = :id_practica`,
+        {
+          replacements: { id_practica: actividad.id_practica, horas: horasValidas },
+          type: sequelize.QueryTypes.UPDATE
+        }
+      );
+    }
+
+    return res.json({ success: true, message: 'Actividad validada correctamente' });
+  } catch (error) {
+    console.error('Error al validar actividad:', error);
+    return res.status(500).json({ error: 'Error al validar actividad' });
+  }
+};
+
+// ==================== Evaluaciones ====================
+
+export const getEvaluacionesPracticante = async (req, res) => {
+  try {
+    const id_usuario = req.usuario?.id;
+    const id_empresa = await getIdEmpresaFromUsuario(id_usuario);
+    if (!id_empresa) return res.status(403).json({ error: 'Usuario no asociado a ninguna empresa' });
+
+    const { id_practica } = req.params;
+
+    const verificacion = await sequelize.query(
+      `SELECT pr.id_practica
+       FROM siggip.practicas pr
+       JOIN siggip.ofertas_practica o ON o.id_oferta = pr.id_oferta
+       WHERE pr.id_practica = :id_practica AND o.id_empresa = :id_empresa`,
+      { replacements: { id_practica, id_empresa }, type: sequelize.QueryTypes.SELECT }
+    );
+
+    if (verificacion.length === 0) {
+      return res.status(404).json({ error: 'Práctica no encontrada o no autorizada' });
+    }
+
+    const query = `
+      SELECT 
+        e.id_evaluacion,
+        e.tipo_evaluacion,
+        e.fecha_evaluacion,
+        e.periodo_evaluacion,
+        e.nota_final,
+        e.observaciones_generales,
+        e.fortalezas_destacadas,
+        e.areas_mejora,
+        e.estado_evaluacion,
+        e.evaluador_nombre,
+        e.evaluador_cargo,
+        e.fecha_registro
+      FROM siggip.evaluaciones e
+      WHERE e.id_practica = :id_practica
+      ORDER BY e.fecha_evaluacion DESC, e.fecha_registro DESC`;
+
+    const evaluaciones = await sequelize.query(query, {
+      replacements: { id_practica },
+      type: sequelize.QueryTypes.SELECT
+    });
+
+    return res.json(evaluaciones);
+  } catch (error) {
+    console.error('Error al obtener evaluaciones:', error);
+    return res.status(500).json({ error: 'Error al obtener evaluaciones' });
+  }
+};
+
+export const crearEvaluacion = async (req, res) => {
+  const t = await sequelize.transaction();
+  try {
+    const id_usuario = req.usuario?.id;
+    const id_empresa = await getIdEmpresaFromUsuario(id_usuario);
+    if (!id_empresa) {
+      await t.rollback();
+      return res.status(403).json({ error: 'Usuario no asociado a ninguna empresa' });
+    }
+
+    const { id_practica } = req.params;
+    const {
+      tipo_evaluacion,
+      fecha_evaluacion,
+      periodo_evaluacion,
+      observaciones_generales,
+      fortalezas_destacadas,
+      areas_mejora,
+      evaluador_nombre,
+      evaluador_cargo,
+      competencias
+    } = req.body;
+
+    const verificacion = await sequelize.query(
+      `SELECT pr.id_practica
+       FROM siggip.practicas pr
+       JOIN siggip.ofertas_practica o ON o.id_oferta = pr.id_oferta
+       WHERE pr.id_practica = :id_practica AND o.id_empresa = :id_empresa`,
+      { replacements: { id_practica, id_empresa }, type: sequelize.QueryTypes.SELECT, transaction: t }
+    );
+
+    if (verificacion.length === 0) {
+      await t.rollback();
+      return res.status(404).json({ error: 'Práctica no encontrada o no autorizada' });
+    }
+
+    let nota_final = null;
+    if (competencias && competencias.length > 0) {
+      const suma = competencias.reduce((acc, c) => acc + (c.calificacion || 0), 0);
+      nota_final = (suma / competencias.length).toFixed(1);
+    }
+
+    const insertEval = await sequelize.query(
+      `INSERT INTO siggip.evaluaciones (
+        id_practica, tipo_evaluacion, fecha_evaluacion, periodo_evaluacion,
+        nota_final, observaciones_generales, fortalezas_destacadas, areas_mejora,
+        estado_evaluacion, evaluador_nombre, evaluador_cargo
+      ) VALUES (
+        :id_practica, :tipo_evaluacion, :fecha_evaluacion, :periodo_evaluacion,
+        :nota_final, :observaciones_generales, :fortalezas_destacadas, :areas_mejora,
+        'completada', :evaluador_nombre, :evaluador_cargo
+      ) RETURNING id_evaluacion`,
+      {
+        replacements: {
+          id_practica,
+          tipo_evaluacion,
+          fecha_evaluacion,
+          periodo_evaluacion,
+          nota_final,
+          observaciones_generales,
+          fortalezas_destacadas,
+          areas_mejora,
+          evaluador_nombre,
+          evaluador_cargo
+        },
+        type: sequelize.QueryTypes.INSERT,
+        transaction: t
+      }
+    );
+
+    const id_evaluacion = insertEval[0][0].id_evaluacion;
+
+    if (competencias && competencias.length > 0) {
+      for (let comp of competencias) {
+        await sequelize.query(
+          `INSERT INTO siggip.evaluaciones_competencias (
+            id_evaluacion, id_competencia, calificacion, observaciones
+          ) VALUES (
+            :id_evaluacion, :id_competencia, :calificacion, :observaciones
+          )`,
+          {
+            replacements: {
+              id_evaluacion,
+              id_competencia: comp.id_competencia,
+              calificacion: comp.calificacion,
+              observaciones: comp.observaciones || null
+            },
+            type: sequelize.QueryTypes.INSERT,
+            transaction: t
+          }
+        );
+      }
+    }
+
+    await t.commit();
+    return res.status(201).json({ id_evaluacion, success: true });
+  } catch (error) {
+    await t.rollback();
+    console.error('Error al crear evaluación:', error);
+    return res.status(500).json({ error: 'Error al crear evaluación' });
+  }
+};
+
+export const getDetalleEvaluacion = async (req, res) => {
+  try {
+    const id_usuario = req.usuario?.id;
+    const id_empresa = await getIdEmpresaFromUsuario(id_usuario);
+    if (!id_empresa) return res.status(403).json({ error: 'Usuario no asociado a ninguna empresa' });
+
+    const { id_evaluacion } = req.params;
+
+    const query = `
+      SELECT 
+        e.id_evaluacion,
+        e.id_practica,
+        e.tipo_evaluacion,
+        e.fecha_evaluacion,
+        e.periodo_evaluacion,
+        e.nota_final,
+        e.observaciones_generales,
+        e.fortalezas_destacadas,
+        e.areas_mejora,
+        e.estado_evaluacion,
+        e.evaluador_nombre,
+        e.evaluador_cargo,
+        e.fecha_registro
+      FROM siggip.evaluaciones e
+      JOIN siggip.practicas pr ON pr.id_practica = e.id_practica
+      JOIN siggip.ofertas_practica o ON o.id_oferta = pr.id_oferta
+      WHERE e.id_evaluacion = :id_evaluacion AND o.id_empresa = :id_empresa`;
+
+    const evaluacion = await sequelize.query(query, {
+      replacements: { id_evaluacion, id_empresa },
+      type: sequelize.QueryTypes.SELECT
+    });
+
+    if (evaluacion.length === 0) {
+      return res.status(404).json({ error: 'Evaluación no encontrada o no autorizada' });
+    }
+
+    const competencias = await sequelize.query(
+      `SELECT 
+        ec.id_eval_competencia,
+        ec.id_competencia,
+        ec.calificacion,
+        ec.observaciones,
+        c.nombre_competencia,
+        c.descripcion_competencia
+       FROM siggip.evaluaciones_competencias ec
+       JOIN siggip.competencias c ON c.id_competencia = ec.id_competencia
+       WHERE ec.id_evaluacion = :id_evaluacion
+       ORDER BY c.nombre_competencia`,
+      { replacements: { id_evaluacion }, type: sequelize.QueryTypes.SELECT }
+    );
+
+    return res.json({
+      ...evaluacion[0],
+      competencias
+    });
+  } catch (error) {
+    console.error('Error al obtener detalle de evaluación:', error);
+    return res.status(500).json({ error: 'Error al obtener detalle de evaluación' });
+  }
+};
+
+export const actualizarEvaluacion = async (req, res) => {
+  const t = await sequelize.transaction();
+  try {
+    const id_usuario = req.usuario?.id;
+    const id_empresa = await getIdEmpresaFromUsuario(id_usuario);
+    if (!id_empresa) {
+      await t.rollback();
+      return res.status(403).json({ error: 'Usuario no asociado a ninguna empresa' });
+    }
+
+    const { id_evaluacion } = req.params;
+    const {
+      tipo_evaluacion,
+      fecha_evaluacion,
+      periodo_evaluacion,
+      observaciones_generales,
+      fortalezas_destacadas,
+      areas_mejora,
+      evaluador_nombre,
+      evaluador_cargo,
+      competencias
+    } = req.body;
+
+    const verificacion = await sequelize.query(
+      `SELECT e.id_evaluacion
+       FROM siggip.evaluaciones e
+       JOIN siggip.practicas pr ON pr.id_practica = e.id_practica
+       JOIN siggip.ofertas_practica o ON o.id_oferta = pr.id_oferta
+       WHERE e.id_evaluacion = :id_evaluacion AND o.id_empresa = :id_empresa`,
+      { replacements: { id_evaluacion, id_empresa }, type: sequelize.QueryTypes.SELECT, transaction: t }
+    );
+
+    if (verificacion.length === 0) {
+      await t.rollback();
+      return res.status(404).json({ error: 'Evaluación no encontrada o no autorizada' });
+    }
+
+    let nota_final = null;
+    if (competencias && competencias.length > 0) {
+      const suma = competencias.reduce((acc, c) => acc + (c.calificacion || 0), 0);
+      nota_final = (suma / competencias.length).toFixed(1);
+    }
+
+    await sequelize.query(
+      `UPDATE siggip.evaluaciones
+       SET tipo_evaluacion = COALESCE(:tipo_evaluacion, tipo_evaluacion),
+           fecha_evaluacion = COALESCE(:fecha_evaluacion, fecha_evaluacion),
+           periodo_evaluacion = COALESCE(:periodo_evaluacion, periodo_evaluacion),
+           nota_final = COALESCE(:nota_final, nota_final),
+           observaciones_generales = COALESCE(:observaciones_generales, observaciones_generales),
+           fortalezas_destacadas = COALESCE(:fortalezas_destacadas, fortalezas_destacadas),
+           areas_mejora = COALESCE(:areas_mejora, areas_mejora),
+           evaluador_nombre = COALESCE(:evaluador_nombre, evaluador_nombre),
+           evaluador_cargo = COALESCE(:evaluador_cargo, evaluador_cargo)
+       WHERE id_evaluacion = :id_evaluacion`,
+      {
+        replacements: {
+          id_evaluacion,
+          tipo_evaluacion,
+          fecha_evaluacion,
+          periodo_evaluacion,
+          nota_final,
+          observaciones_generales,
+          fortalezas_destacadas,
+          areas_mejora,
+          evaluador_nombre,
+          evaluador_cargo
+        },
+        type: sequelize.QueryTypes.UPDATE,
+        transaction: t
+      }
+    );
+
+    if (competencias && competencias.length > 0) {
+      await sequelize.query(
+        `DELETE FROM siggip.evaluaciones_competencias WHERE id_evaluacion = :id_evaluacion`,
+        { replacements: { id_evaluacion }, type: sequelize.QueryTypes.DELETE, transaction: t }
+      );
+
+      for (let comp of competencias) {
+        await sequelize.query(
+          `INSERT INTO siggip.evaluaciones_competencias (
+            id_evaluacion, id_competencia, calificacion, observaciones
+          ) VALUES (
+            :id_evaluacion, :id_competencia, :calificacion, :observaciones
+          )`,
+          {
+            replacements: {
+              id_evaluacion,
+              id_competencia: comp.id_competencia,
+              calificacion: comp.calificacion,
+              observaciones: comp.observaciones || null
+            },
+            type: sequelize.QueryTypes.INSERT,
+            transaction: t
+          }
+        );
+      }
+    }
+
+    await t.commit();
+    return res.json({ success: true, message: 'Evaluación actualizada correctamente' });
+  } catch (error) {
+    await t.rollback();
+    console.error('Error al actualizar evaluación:', error);
+    return res.status(500).json({ error: 'Error al actualizar evaluación' });
+  }
+};
+
+// ==================== Obtener Mi Empresa ====================
+
 export const getMiEmpresa = async (req, res) => {
   try {
     const id_usuario = req.usuario?.id;
