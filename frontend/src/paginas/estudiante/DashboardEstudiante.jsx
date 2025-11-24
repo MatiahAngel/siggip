@@ -928,7 +928,7 @@ function SeccionInicio({ perfil, estadisticas, practicaActual, calcularProgreso,
         </div>
       </div>
 
-      {/* Resto del código igual... */}
+      
       {practicaActual ? (
         <>
           <PracticaActualCard 
@@ -1040,10 +1040,7 @@ function SeccionInicio({ perfil, estadisticas, practicaActual, calcularProgreso,
 }
 
 // ============ PRÁCTICA ACTUAL CARD ============
-// ============ PRÁCTICA ACTUAL CARD MEJORADA ============
-// ============ PRÁCTICA ACTUAL CARD - VERSIÓN PROFESIONAL COMPLETA Y MEJORADA ============
 // 🎯 Sin requisitos, con diseño más profesional y funcional
-// 📋 Reemplaza COMPLETAMENTE tu función PracticaActualCard con esta versión
 
 function PracticaActualCard({ practica, calcularProgreso, abrirDetallePractica, abrirSubirInforme, abrirBitacora }) {
   const [copiedEmail, setCopiedEmail] = useState(false);
@@ -1052,14 +1049,27 @@ function PracticaActualCard({ practica, calcularProgreso, abrirDetallePractica, 
   const [copiedTelProf, setCopiedTelProf] = useState(false);
   
   const progreso = calcularProgreso(practica);
-  
-  const diasTranscurridos = Math.floor(
-    (new Date() - new Date(practica.fecha_inicio_practica)) / (1000 * 60 * 60 * 24)
-  );
-  const diasTotales = Math.floor(
-    (new Date(practica.fecha_termino_practica) - new Date(practica.fecha_inicio_practica)) / (1000 * 60 * 60 * 24)
-  );
-  const diasRestantes = diasTotales - diasTranscurridos;
+  // Fecha término calculada dinámicamente (+40 días si no viene del backend)
+  const fechaInicioPractica = practica?.fecha_inicio_practica ? new Date(practica.fecha_inicio_practica) : null;
+  let fechaTerminoCalculada = null;
+  if (fechaInicioPractica) {
+    if (practica?.fecha_termino_practica) {
+      fechaTerminoCalculada = new Date(practica.fecha_termino_practica);
+    } else {
+      fechaTerminoCalculada = new Date(fechaInicioPractica);
+      fechaTerminoCalculada.setDate(fechaTerminoCalculada.getDate() + 40);
+    }
+  }
+
+  // Evitar días negativos si la fecha de inicio es futura
+  const diasTranscurridosRaw = fechaInicioPractica
+    ? Math.floor((new Date() - fechaInicioPractica) / (1000 * 60 * 60 * 24))
+    : 0;
+  const diasTranscurridos = Math.max(0, diasTranscurridosRaw);
+  const diasTotales = fechaInicioPractica && fechaTerminoCalculada
+    ? Math.floor((fechaTerminoCalculada - fechaInicioPractica) / (1000 * 60 * 60 * 24))
+    : 0;
+  const diasRestantes = Math.max(0, diasTotales - diasTranscurridos);
 
   const handleCopy = (text, setter) => {
     navigator.clipboard.writeText(text);
@@ -1069,7 +1079,7 @@ function PracticaActualCard({ practica, calcularProgreso, abrirDetallePractica, 
   
   return (
     <div className="bg-white rounded-3xl shadow-2xl overflow-hidden">
-      {/* 🎯 HEADER MEJORADO con Barra de Progreso Grande */}
+      {/* 🎯 HEADER  con Barra de Progreso Grande */}
       <div className="bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 p-8">
         <div className="flex items-start justify-between gap-4 mb-6">
           <div className="flex-1">
@@ -1165,7 +1175,7 @@ function PracticaActualCard({ practica, calcularProgreso, abrirDetallePractica, 
 
           {/* Grid de Información - Diseño Premium */}
           <div className="grid md:grid-cols-2 gap-5">
-            {/* Columna 1: Ubicación y Modalidad */}
+            {/* Columna : Ubicación y Modalidad */}
             <div className="space-y-4">
               {/* Ubicación */}
               <div className="p-5 bg-white rounded-2xl border-2 border-gray-200 shadow-md hover:shadow-xl hover:border-blue-300 transition group">
@@ -1218,7 +1228,7 @@ function PracticaActualCard({ practica, calcularProgreso, abrirDetallePractica, 
               )}
             </div>
 
-            {/* Columna 2: Contacto */}
+            {/* Columna : Contacto */}
             <div className="space-y-4">
               {/* Teléfono */}
               {practica.telefono_empresa && (
@@ -1304,7 +1314,7 @@ function PracticaActualCard({ practica, calcularProgreso, abrirDetallePractica, 
           )}
         </div>
 
-        {/* 👨‍🏫 PROFESOR GUÍA - SUPER MEJORADO */}
+        {/*PROFESOR GUÍA*/}
         {practica.profesor_nombre && (
           <div className="bg-gradient-to-br from-purple-50 via-pink-50 to-red-50 rounded-3xl p-8 border-2 border-purple-300 shadow-xl relative overflow-hidden">
             {/* Círculo decorativo de fondo */}
@@ -1477,12 +1487,14 @@ function PracticaActualCard({ practica, calcularProgreso, abrirDetallePractica, 
                 <p className="text-sm text-purple-800 font-black uppercase tracking-wide">Fecha de Término</p>
               </div>
               <p className="text-2xl font-black text-gray-900 ml-16">
-                {new Date(practica.fecha_termino_practica).toLocaleDateString('es-CL', { 
-                  weekday: 'long',
-                  day: 'numeric', 
-                  month: 'long', 
-                  year: 'numeric' 
-                })}
+                {fechaTerminoCalculada
+                  ? fechaTerminoCalculada.toLocaleDateString('es-CL', {
+                      weekday: 'long',
+                      day: 'numeric',
+                      month: 'long',
+                      year: 'numeric'
+                    })
+                  : '—'}
               </p>
             </div>
 
@@ -1515,7 +1527,7 @@ function PracticaActualCard({ practica, calcularProgreso, abrirDetallePractica, 
           </div>
         )}
 
-        {/* Acciones Rápidas - Rediseñadas */}
+        {/* Acciones Rápidas  */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-5 pt-8 border-t-2 border-gray-200">
           <button 
             onClick={() => abrirDetallePractica(practica)}
@@ -2134,9 +2146,24 @@ function FormularioBitacora({ practica, registroEdit, onClose, onGuardar }) {
 // ============ MODALES EXISTENTES ============
 function DetallePracticaModal({ practica, onClose, onSubirInforme, onVerBitacora }) {
   const progreso = Math.round((practica.horas_completadas / practica.horas_requeridas) * 100);
-  const diasTranscurridos = Math.floor((new Date() - new Date(practica.fecha_inicio_practica)) / (1000 * 60 * 60 * 24));
-  const diasTotales = Math.floor((new Date(practica.fecha_termino_practica) - new Date(practica.fecha_inicio_practica)) / (1000 * 60 * 60 * 24));
-  const diasRestantes = diasTotales - diasTranscurridos;
+  const fechaInicioPractica = practica?.fecha_inicio_practica ? new Date(practica.fecha_inicio_practica) : null;
+  let fechaTerminoCalculada = null;
+  if (fechaInicioPractica) {
+    if (practica?.fecha_termino_practica) {
+      fechaTerminoCalculada = new Date(practica.fecha_termino_practica);
+    } else {
+      fechaTerminoCalculada = new Date(fechaInicioPractica);
+      fechaTerminoCalculada.setDate(fechaTerminoCalculada.getDate() + 40);
+    }
+  }
+  const diasTranscurridosRaw = fechaInicioPractica
+    ? Math.floor((new Date() - fechaInicioPractica) / (1000 * 60 * 60 * 24))
+    : 0;
+  const diasTranscurridos = Math.max(0, diasTranscurridosRaw);
+  const diasTotales = fechaInicioPractica && fechaTerminoCalculada
+    ? Math.floor((fechaTerminoCalculada - fechaInicioPractica) / (1000 * 60 * 60 * 24))
+    : 0;
+  const diasRestantes = Math.max(0, diasTotales - diasTranscurridos);
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto">
@@ -2213,11 +2240,13 @@ function DetallePracticaModal({ practica, onClose, onSubirInforme, onVerBitacora
               <InfoDetailCard 
                 icon="🎯" 
                 label="Fecha de Término" 
-                value={new Date(practica.fecha_termino_practica).toLocaleDateString('es-CL', { 
-                  day: 'numeric', 
-                  month: 'long', 
-                  year: 'numeric' 
-                })} 
+                value={fechaTerminoCalculada
+                  ? fechaTerminoCalculada.toLocaleDateString('es-CL', {
+                      day: 'numeric',
+                      month: 'long',
+                      year: 'numeric'
+                    })
+                  : '—'} 
               />
               <InfoDetailCard 
                 icon="⏰" 
