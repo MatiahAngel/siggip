@@ -16,34 +16,92 @@ export default function LoginEmpresas() {
   const { login } = useAuth();
   const navigate = useNavigate();
 
-  // Formatea RUT (12.345.678-9)
+  // ============================================
+  // FORMATEAR RUT MIENTRAS ESCRIBE (EMPRESA)
+  // ============================================
   const formatRut = (value) => {
     const cleaned = value.replace(/[^0-9kK]/g, '').toUpperCase();
+
     if (cleaned.length === 0) return '';
     if (cleaned.length === 1) return cleaned;
+
     const dv = cleaned.slice(-1);
     const numbers = cleaned.slice(0, -1);
+
     if (numbers.length === 0) return dv;
+
     const formatted = numbers.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+
     return `${formatted}-${dv}`;
   };
 
-  // VALIDACIÓN DESACTIVADA PARA PRUEBAS: devolver true siempre
-  const validateRutDigit = () => true;
+  // ============================================
+  // VALIDAR DÍGITO VERIFICADOR DEL RUT (EMPRESA)
+  // ============================================
+  const validateRutDigit = (rut) => {
+    const cleaned = rut.replace(/[^0-9kK]/g, '').toUpperCase();
 
-  // Limpia RUT (sin puntos ni guión)
-  const cleanRut = (rut) => rut.replace(/\./g, '').replace(/-/g, '');
+    if (cleaned.length < 2) return false;
 
+    const dv = cleaned.slice(-1);
+    const numbers = cleaned.slice(0, -1);
+
+    if (!/^\d+$/.test(numbers)) return false;
+
+    let sum = 0;
+    let multiplier = 2;
+
+    for (let i = numbers.length - 1; i >= 0; i--) {
+      sum += parseInt(numbers[i]) * multiplier;
+      multiplier = multiplier === 7 ? 2 : multiplier + 1;
+    }
+
+    const expectedDv = 11 - (sum % 11);
+    const calculatedDv =
+      expectedDv === 11 ? '0' : expectedDv === 10 ? 'K' : String(expectedDv);
+
+    return dv === calculatedDv;
+  };
+
+  // ============================================
+  // LIMPIAR RUT (quitar puntos y guion)
+  // ============================================
+  const cleanRut = (rut) => {
+    return rut.replace(/\./g, '').replace(/-/g, '');
+  };
+
+  // ============================================
+  // MANEJAR CAMBIO EN INPUT DE RUT EMPRESA
+  // ============================================
   const handleRutChange = (e) => {
     const formatted = formatRut(e.target.value);
     setRutEmpresa(formatted);
-    if (errors.rutEmpresa) setErrors({ ...errors, rutEmpresa: '' });
+
+    if (errors.rutEmpresa) {
+      setErrors({ ...errors, rutEmpresa: '' });
+    }
   };
 
-  // VALIDACIÓN DESACTIVADA PARA PRUEBAS: no bloquear envío ni mostrar errores
+  // ============================================
+  // VALIDAR FORMULARIO
+  // ============================================
   const validateForm = () => {
-    setErrors({});
-    return true;
+    const newErrors = {};
+
+    if (!rutEmpresa.trim()) {
+      newErrors.rutEmpresa = 'El RUT de la empresa es requerido';
+    } else if (!validateRutDigit(rutEmpresa)) {
+      newErrors.rutEmpresa = 'RUT de empresa inválido';
+    }
+
+    if (!password.trim()) {
+      newErrors.password = 'La contraseña es requerida';
+    } else if (password.length < 4) {
+      newErrors.password = 'La contraseña debe tener al menos 4 caracteres';
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
 
   const handleSubmit = async (e) => {

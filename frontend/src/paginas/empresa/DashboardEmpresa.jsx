@@ -4,17 +4,18 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import FormularioOferta from '../../components/ofertas/FormularioOferta.jsx';
-import { getOfertas } from '../../servicios/api/ofertasService';
-import { 
-  getPostulacionesEmpresa, 
-  aceptarPostulacionEmpresa, 
+import { getOfertasByEmpresa } from '../../servicios/api/ofertasService';
+import {
+  getPostulacionesEmpresa,
+  aceptarPostulacionEmpresa,
   rechazarPostulacionEmpresa,
   getPracticantesEmpresa,
   // ⬇️ NUEVAS IMPORTACIONES para modal de practicantes
   getPlanPractica,
   getBitacoraPracticante,
   getEvaluacionesPracticante,
-  validarActividadBitacora
+  validarActividadBitacora,
+  getMiEmpresa
 } from '../../servicios/api/empresasService';
 
 export default function DashboardEmpresa() {
@@ -39,6 +40,7 @@ export default function DashboardEmpresa() {
   
   // ⬇️ NUEVO ESTADO para el modal de detalle del practicante
   const [practicanteSeleccionado, setPracticanteSeleccionado] = useState(null);
+  const [miEmpresa, setMiEmpresa] = useState(null);
 
   useEffect(() => {
     cargarDatos();
@@ -48,9 +50,13 @@ export default function DashboardEmpresa() {
     try {
       setLoading(true);
       setError(null);
-      
-      const ofertasApi = await getOfertas();
-      setOfertas(Array.isArray(ofertasApi) ? ofertasApi : []);
+
+      const empresa = await getMiEmpresa();
+      setMiEmpresa(empresa);
+
+      const ofertasApi = await getOfertasByEmpresa(empresa.id_empresa);
+      const listaOfertas = Array.isArray(ofertasApi) ? ofertasApi : [];
+      setOfertas(listaOfertas);
 
       const posts = await getPostulacionesEmpresa().catch(() => []);
       const listaPost = Array.isArray(posts) ? posts : [];
@@ -64,7 +70,7 @@ export default function DashboardEmpresa() {
       }));
       setPracticantes(practicantesConProgreso);
 
-      const activas = (ofertasApi || []).filter(o => o.estado_oferta === 'activa').length;
+      const activas = (listaOfertas || []).filter(o => o.estado_oferta === 'activa').length;
       const totalPostPend = (listaPost || []).filter(p => ['pendiente', 'en_revision'].includes(p.estado_postulacion)).length;
       setStats({
         ofertasActivas: activas,

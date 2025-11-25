@@ -1603,12 +1603,12 @@ function ModalPostulacion({ oferta, onClose, onPostular, postulando }) {
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto">
-      <div className="bg-white rounded-3xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
-        <div className="sticky top-0 bg-gradient-to-r from-yellow-500 to-orange-600 p-6 rounded-t-3xl z-10">
+      <div className="bg-white rounded-3xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+        <div className="sticky top-0 bg-gradient-to-r from-yellow-500 via-orange-500 to-red-500 p-6 rounded-t-3xl z-10">
           <div className="flex items-start justify-between">
             <div className="flex-1">
-              <h2 className="text-3xl font-black text-white mb-2">📨 Postular a Práctica</h2>
-              <p className="text-yellow-100">{oferta.titulo_oferta}</p>
+              <h2 className="text-3xl font-black text-white mb-1">📨 Postular a Práctica</h2>
+              <p className="text-yellow-100 text-sm font-semibold">{oferta.titulo_oferta}</p>
             </div>
             <button 
               onClick={onClose}
@@ -1620,61 +1620,278 @@ function ModalPostulacion({ oferta, onClose, onPostular, postulando }) {
           </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 md:p-8 space-y-6">
-          {/* Información de la oferta */}
-          <div className="bg-gradient-to-br from-yellow-50 to-orange-50 rounded-2xl p-6">
-            <h3 className="text-lg font-black text-gray-900 mb-4">📋 Detalles de la Oferta</h3>
-            
-            <div className="space-y-3">
-              <div className="flex items-center gap-3">
-                <span className="text-2xl">🏢</span>
-                <div>
-                  <p className="text-xs text-gray-600">Empresa</p>
-                  <p className="font-bold text-gray-900">{oferta.empresa_nombre}</p>
+        <form onSubmit={handleSubmit} className="p-6 md:p-8 space-y-6 bg-gradient-to-b from-yellow-50 via-orange-50 to-red-50">
+          {/* Contenido completo copiado de DetalleOferta, armonizado al tema cálido */}
+          <div className="bg-white/80 rounded-2xl p-4 md:p-6 space-y-6 border border-yellow-200 shadow-lg">
+            {/* Stats rápidos */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-2">
+              <div className="bg-gradient-to-br from-yellow-100 to-orange-100 p-4 rounded-xl border border-yellow-300 shadow">
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-2xl">🏢</span>
+                  <span className="text-xs text-orange-800 font-semibold uppercase">Modalidad</span>
                 </div>
+                <p className="font-bold text-gray-900 text-lg capitalize">{oferta.modalidad_trabajo}</p>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="flex items-center gap-2">
-                  <span className="text-xl">⏱️</span>
-                  <div>
-                    <p className="text-xs text-gray-600">Duración</p>
-                    <p className="font-semibold text-gray-900">{oferta.duracion_horas}h</p>
-                  </div>
+              <div className="bg-gradient-to-br from-amber-100 to-yellow-100 p-4 rounded-xl border border-amber-300 shadow">
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-2xl">⏰</span>
+                  <span className="text-xs text-orange-800 font-semibold uppercase">Duración</span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-xl">📍</span>
-                  <div>
-                    <p className="text-xs text-gray-600">Modalidad</p>
-                    <p className="font-semibold text-gray-900">{oferta.modalidad_trabajo}</p>
-                  </div>
-                </div>
+                <p className="font-bold text-gray-900 text-lg">{oferta.duracion_horas}h</p>
               </div>
 
-              {oferta.salario_referencial && (
-                <div className="flex items-center gap-2">
-                  <span className="text-xl">💰</span>
-                  <div>
-                    <p className="text-xs text-gray-600">Salario Referencial</p>
-                    <p className="font-bold text-emerald-600">
-                      ${Number(oferta.salario_referencial).toLocaleString('es-CL')}
+              <div className="bg-gradient-to-br from-orange-100 to-red-100 p-4 rounded-xl border border-orange-300 shadow">
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-2xl">🎯</span>
+                  <span className="text-xs text-orange-800 font-semibold uppercase">Cupos</span>
+                </div>
+                <p className="font-bold text-gray-900 text-lg">{oferta.cupos_disponibles}</p>
+              </div>
+            </div>
+
+            {/* Descripción */}
+            <section className="mb-2">
+              <div className="flex items-center gap-2 mb-3">
+                <div className="w-10 h-10 bg-gradient-to-br from-orange-500 to-red-500 rounded-lg flex items-center justify-center">
+                  <span className="text-xl text-white">📋</span>
+                </div>
+                <h2 className="text-lg font-bold text-gray-900">Descripción de la práctica</h2>
+              </div>
+              <div className="bg-white border border-gray-300 rounded-lg p-4 shadow-sm">
+                <p className="text-gray-700 whitespace-pre-wrap text-sm leading-relaxed">
+                  {oferta.descripcion}
+                </p>
+              </div>
+            </section>
+
+            {/* REQUISITOS DESTACADOS */}
+            {oferta.requisitos && (
+              <section className="mb-2">
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="w-10 h-10 bg-gradient-to-br from-red-500 to-orange-500 rounded-lg flex items-center justify-center">
+                    <span className="text-xl text-white">⚠️</span>
+                  </div>
+                  <h2 className="text-lg font-bold text-gray-900">Requisitos Importantes</h2>
+                </div>
+                <div className="bg-gradient-to-br from-red-50 to-orange-50 border-2 border-orange-400 rounded-lg p-4 shadow-md">
+                  <div className="flex items-start gap-3 mb-3">
+                    <div className="w-7 h-7 bg-red-600 rounded-full flex items-center justify-center flex-shrink-0">
+                      <span className="text-white font-bold">!</span>
+                    </div>
+                    <p className="text-xs text-red-800 font-bold uppercase">
+                      Asegúrate de cumplir con todos estos requisitos antes de postular
+                    </p>
+                  </div>
+                  <div className="bg-white rounded-lg p-4 border-2 border-red-300">
+                    <p className="text-gray-800 whitespace-pre-wrap text-sm leading-relaxed font-medium">
+                      {oferta.requisitos}
                     </p>
                   </div>
                 </div>
-              )}
+              </section>
+            )}
 
-              <div className="pt-3 border-t border-gray-200">
-                <p className="text-xs text-gray-600 mb-1">Descripción</p>
-                <p className="text-sm text-gray-900">{oferta.descripcion}</p>
-              </div>
-
-              {oferta.requisitos && (
-                <div>
-                  <p className="text-xs text-gray-600 mb-1">Requisitos</p>
-                  <p className="text-sm text-gray-900">{oferta.requisitos}</p>
+            {/* Detalles */}
+            <section className="mb-2">
+              <div className="flex items-center gap-2 mb-3">
+                <div className="w-10 h-10 bg-gradient-to-br from-yellow-500 to-orange-500 rounded-lg flex items-center justify-center">
+                  <span className="text-xl text-white">📍</span>
                 </div>
-              )}
-            </div>
+                <h2 className="text-lg font-bold text-gray-900">Detalles de la práctica</h2>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {oferta.ubicacion && (
+                  <div className="flex items-center gap-3 p-4 bg-white rounded-lg border border-yellow-200 shadow-sm">
+                    <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                      <span className="text-2xl">📍</span>
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-xs text-gray-600 font-semibold uppercase mb-1">Ubicación</p>
+                      <p className="font-bold text-gray-900 text-sm">{oferta.ubicacion}</p>
+                    </div>
+                  </div>
+                )}
+
+                {oferta.horario_trabajo && (
+                  <div className="flex items-center gap-3 p-4 bg-white rounded-lg border border-yellow-200 shadow-sm">
+                    <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                      <span className="text-2xl">🕐</span>
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-xs text-gray-600 font-semibold uppercase mb-1">Horario</p>
+                      <p className="font-bold text-gray-900 text-sm">{oferta.horario_trabajo}</p>
+                    </div>
+                  </div>
+                )}
+
+                {oferta.salario_referencial && (
+                  <div className="flex items-center gap-3 p-4 bg-white rounded-lg border border-yellow-200 shadow-sm">
+                    <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                      <span className="text-2xl">💰</span>
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-xs text-gray-600 font-semibold uppercase mb-1">Salario</p>
+                      <p className="font-bold text-gray-900 text-sm">
+                        ${Number(oferta.salario_referencial).toLocaleString('es-CL')}
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                <div className="flex items-center gap-3 p-4 bg-white rounded-lg border border-yellow-200 shadow-sm">
+                  <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <span className="text-2xl">📅</span>
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-xs text-gray-600 font-semibold uppercase mb-1">Inicio</p>
+                    <p className="font-bold text-gray-900 text-sm">{new Date(oferta.fecha_inicio).toLocaleDateString('es-CL', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3 p-4 bg-white rounded-lg border border-yellow-200 shadow-sm">
+                  <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <span className="text-2xl">⏳</span>
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-xs text-gray-600 font-semibold uppercase mb-1">Postula hasta</p>
+                    <p className="font-bold text-gray-900 text-sm">{new Date(oferta.fecha_limite_postulacion).toLocaleDateString('es-CL', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            {/* Beneficios */}
+            {oferta.beneficios && (
+              <section className="mb-2">
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="w-10 h-10 bg-gradient-to-br from-yellow-500 to-orange-500 rounded-lg flex items-center justify-center">
+                    <span className="text-xl text-white">🎁</span>
+                  </div>
+                  <h2 className="text-lg font-bold text-gray-900">Beneficios</h2>
+                </div>
+                <div className="bg-white border border-gray-300 rounded-lg p-4 shadow-sm">
+                  <p className="text-gray-700 whitespace-pre-wrap text-sm leading-relaxed">
+                    {oferta.beneficios}
+                  </p>
+                </div>
+              </section>
+            )}
+
+            {/* INFORMACIÓN COMPLETA DE LA EMPRESA */}
+            <section className="mb-2">
+              <div className="flex items-center gap-2 mb-3">
+                <div className="w-10 h-10 bg-gradient-to-br from-yellow-500 to-orange-500 rounded-lg flex items-center justify-center">
+                  <span className="text-xl text-white">🏢</span>
+                </div>
+                <h2 className="text-lg font-bold text-gray-900">Información de la Empresa</h2>
+              </div>
+              <div className="bg-gradient-to-br from-yellow-50 via-orange-50 to-red-50 border-2 border-yellow-300 rounded-lg p-5 shadow-md space-y-4">
+                {/* Datos principales */}
+                <div className="bg-white rounded-lg p-4 border border-gray-200">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-xs text-gray-600 font-bold uppercase mb-1">Razón Social</p>
+                      <p className="text-gray-900 font-bold text-sm">{oferta.empresa_nombre}</p>
+                    </div>
+
+                    {oferta.empresa_comercial && (
+                      <div>
+                        <p className="text-xs text-gray-600 font-bold uppercase mb-1">Nombre Comercial</p>
+                        <p className="text-gray-900 font-bold text-sm">{oferta.empresa_comercial}</p>
+                      </div>
+                    )}
+
+                    {oferta.rut_empresa && (
+                      <div>
+                        <p className="text-xs text-gray-600 font-bold uppercase mb-1">RUT</p>
+                        <p className="text-gray-900 font-semibold text-sm">{oferta.rut_empresa}</p>
+                      </div>
+                    )}
+
+                    {oferta.giro_comercial && (
+                      <div>
+                        <p className="text-xs text-gray-600 font-bold uppercase mb-1">Giro Comercial</p>
+                        <p className="text-gray-900 font-semibold text-sm">{oferta.giro_comercial}</p>
+                      </div>
+                    )}
+
+                    {oferta.sector_economico && (
+                      <div>
+                        <p className="text-xs text-gray-600 font-bold uppercase mb-1">Sector Económico</p>
+                        <p className="text-gray-900 font-semibold text-sm">{oferta.sector_economico}</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Ubicación de la empresa */}
+                {(oferta.direccion_empresa || oferta.comuna_empresa || oferta.region_empresa) && (
+                  <div className="bg-white rounded-lg p-4 border border-gray-200">
+                    <div className="flex items-center gap-2 mb-3">
+                      <span className="text-lg">📍</span>
+                      <p className="text-sm font-bold text-gray-800">Ubicación de la Empresa</p>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {oferta.direccion_empresa && (
+                        <div>
+                          <p className="text-xs text-gray-600 font-bold uppercase mb-1">Dirección</p>
+                          <p className="text-gray-900 text-sm font-medium">{oferta.direccion_empresa}</p>
+                        </div>
+                      )}
+                      {oferta.comuna_empresa && (
+                        <div>
+                          <p className="text-xs text-gray-600 font-bold uppercase mb-1">Comuna</p>
+                          <p className="text-gray-900 text-sm font-medium">{oferta.comuna_empresa}</p>
+                        </div>
+                      )}
+                      {oferta.region_empresa && (
+                        <div>
+                          <p className="text-xs text-gray-600 font-bold uppercase mb-1">Región</p>
+                          <p className="text-gray-900 text-sm font-medium">{oferta.region_empresa}</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Contacto de la empresa */}
+                {(oferta.telefono_empresa || oferta.email_contacto_empresa || oferta.contacto_principal || oferta.cargo_contacto) && (
+                  <div className="bg-white rounded-lg p-4 border border-gray-200">
+                    <div className="flex items-center gap-2 mb-3">
+                      <span className="text-lg">📞</span>
+                      <p className="text-sm font-bold text-gray-800">Información de Contacto</p>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {oferta.contacto_principal && (
+                        <div>
+                          <p className="text-xs text-gray-600 font-bold uppercase mb-1">Contacto Principal</p>
+                          <p className="text-gray-900 text-sm font-bold">{oferta.contacto_principal}</p>
+                        </div>
+                      )}
+                      {oferta.cargo_contacto && (
+                        <div>
+                          <p className="text-xs text-gray-600 font-bold uppercase mb-1">Cargo</p>
+                          <p className="text-gray-900 text-sm font-medium">{oferta.cargo_contacto}</p>
+                        </div>
+                      )}
+                      {oferta.telefono_empresa && (
+                        <div>
+                          <p className="text-xs text-gray-600 font-bold uppercase mb-1">Teléfono</p>
+                          <p className="text-gray-900 text-sm font-bold">{oferta.telefono_empresa}</p>
+                        </div>
+                      )}
+                      {oferta.email_contacto_empresa && (
+                        <div>
+                          <p className="text-xs text-gray-600 font-bold uppercase mb-1">Email</p>
+                          <p className="text-gray-900 text-sm font-bold">{oferta.email_contacto_empresa}</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </section>
           </div>
 
           {/* Carta de Motivación */}

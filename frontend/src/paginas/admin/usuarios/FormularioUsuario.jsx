@@ -5,6 +5,56 @@ import { useState, useEffect } from 'react';
 import { createUsuario, updateUsuario } from '../../../servicios/api/usuariosService';
 import { getEspecialidades } from '../../../servicios/api/especialidadesService';
 
+// ============================================
+// Helpers de RUT (replicados desde LoginEstudiante)
+// ============================================
+const formatRut = (value) => {
+  const cleaned = value.replace(/[^0-9kK]/g, '').toUpperCase();
+
+  if (cleaned.length === 0) return '';
+  if (cleaned.length === 1) return cleaned;
+
+  const dv = cleaned.slice(-1);
+  const numbers = cleaned.slice(0, -1);
+
+  if (numbers.length === 0) return dv;
+
+  const formatted = numbers.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+
+  return `${formatted}-${dv}`;
+};
+
+const validateRutDigit = (rut) => {
+  const cleaned = rut.replace(/[^0-9kK]/g, '').toUpperCase();
+
+  if (cleaned.length < 2) return false;
+
+  const dv = cleaned.slice(-1);
+  const numbers = cleaned.slice(0, -1);
+
+  if (!/^\d+$/.test(numbers)) return false;
+
+  let sum = 0;
+  let multiplier = 2;
+
+  for (let i = numbers.length - 1; i >= 0; i--) {
+    sum += parseInt(numbers[i], 10) * multiplier;
+    multiplier = multiplier === 7 ? 2 : multiplier + 1;
+  }
+
+  const expectedDv = 11 - (sum % 11);
+  const calculatedDv =
+    expectedDv === 11 ? '0' : expectedDv === 10 ? 'K' : String(expectedDv);
+
+  return dv === calculatedDv;
+};
+
+// Quitar puntos pero mantener el guion en el RUT
+const normalizeRutForSubmit = (rut) => {
+  if (!rut) return '';
+  return rut.replace(/\./g, '');
+};
+
 export default function FormularioUsuario({ usuario, onClose }) {
   const [formData, setFormData] = useState({
     nombre: '',
@@ -16,7 +66,6 @@ export default function FormularioUsuario({ usuario, onClose }) {
     tipo_usuario: 'estudiante',
     password: '',
     id_especialidad: '',
-    ano_ingreso: new Date().getFullYear(),
     titulo_profesional: '',
     anos_experiencia: '',
     codigo_profesor: '',
@@ -69,7 +118,6 @@ export default function FormularioUsuario({ usuario, onClose }) {
         tipo_usuario: usuario.tipo_usuario || 'estudiante',
         password: '',
         id_especialidad: especialidadId,
-        ano_ingreso: usuario.datosEstudiante?.ano_ingreso || new Date().getFullYear(),
         titulo_profesional: usuario.datosDocente?.titulo_profesional || '',
         anos_experiencia: usuario.datosDocente?.anos_experiencia ?? '',
         codigo_profesor: usuario.datosDocente?.codigo_profesor || '',
@@ -93,8 +141,8 @@ export default function FormularioUsuario({ usuario, onClose }) {
 
     if (!formData.rut.trim()) {
       newErrors.rut = 'El RUT es requerido';
-    } else if (!/^[0-9]{7,8}-[0-9Kk]$/.test(formData.rut)) {
-      newErrors.rut = 'Formato inválido (ej: 12345678-9)';
+    } else if (!validateRutDigit(formData.rut)) {
+      newErrors.rut = 'RUT inválido';
     }
 
     if (!usuario && !formData.password) {
@@ -131,7 +179,7 @@ export default function FormularioUsuario({ usuario, onClose }) {
         apellido_paterno: formData.apellido_paterno,
         apellido_materno: formData.apellido_materno,
         email: formData.email,
-        rut: formData.rut,
+        rut: normalizeRutForSubmit(formData.rut),
         telefono: formData.telefono,
         tipo_usuario: formData.tipo_usuario,
         password: formData.password || undefined,
@@ -140,7 +188,6 @@ export default function FormularioUsuario({ usuario, onClose }) {
 
       if (formData.tipo_usuario === 'estudiante') {
         dataToSend.id_especialidad = parseInt(formData.id_especialidad, 10);
-        dataToSend.ano_ingreso = parseInt(formData.ano_ingreso, 10);
       } else if (formData.tipo_usuario === 'profesor') {
         dataToSend.id_especialidad = parseInt(formData.id_especialidad, 10);
         dataToSend.titulo_profesional = (formData.titulo_profesional || '').trim();
@@ -172,21 +219,37 @@ export default function FormularioUsuario({ usuario, onClose }) {
       setFormData((prev) => ({
         ...prev,
         tipo_usuario: nextType,
-        id_especialidad: nextType === 'estudiante' || nextType === 'profesor' ? prev.id_especialidad : '',
-        ano_ingreso: nextType === 'estudiante' ? prev.ano_ingreso : new Date().getFullYear(),
-        titulo_profesional: nextType === 'profesor' ? prev.titulo_profesional : '',
-        anos_experiencia: nextType === 'profesor' ? prev.anos_experiencia : '',
-        codigo_profesor: nextType === 'profesor' ? prev.codigo_profesor : '',
+        id_especialidad:
+          nextType === 'estudiante' || nextType === 'profesor'
+            ? prev.id_especialidad
+            : '',
+        ano_ingreso:
+          nextType === 'estudiante' ? prev.ano_ingreso : new Date().getFullYear(),
+        titulo_profesional:
+          nextType === 'profesor' ? prev.titulo_profesional : '',
+        anos_experiencia:
+          nextType === 'profesor' ? prev.anos_experiencia : '',
+        codigo_profesor:
+          nextType === 'profesor' ? prev.codigo_profesor : '',
         cargo: nextType === 'profesor' ? prev.cargo : '',
-        estado_laboral: nextType === 'profesor' ? prev.estado_laboral : 'activo',
+        estado_laboral:
+          nextType === 'profesor' ? prev.estado_laboral : 'activo',
       }));
       return;
     }
 
-    setFormData((prev) => ({
-      ...prev,
-      [name]: name === 'id_especialidad' ? String(value) : value,
-    }));
+    if (name === 'rut') {
+      const formatted = formatRut(value);
+      setFormData((prev) => ({
+        ...prev,
+        rut: formatted,
+      }));
+    } else {
+      setFormData((prev) => ({
+        ...prev,
+        [name]: name === 'id_especialidad' ? String(value) : value,
+      }));
+    }
 
     if (errors[name]) setErrors((prev) => ({ ...prev, [name]: '' }));
   };
@@ -389,19 +452,6 @@ export default function FormularioUsuario({ usuario, onClose }) {
                   {errors.id_especialidad && (
                     <p className="mt-1 text-xs text-red-600">{errors.id_especialidad}</p>
                   )}
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Año de Ingreso</label>
-                  <input
-                    type="number"
-                    name="ano_ingreso"
-                    value={formData.ano_ingreso}
-                    onChange={handleChange}
-                    min="2000"
-                    max={new Date().getFullYear() + 1}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-gray-500"
-                  />
                 </div>
               </div>
             </section>

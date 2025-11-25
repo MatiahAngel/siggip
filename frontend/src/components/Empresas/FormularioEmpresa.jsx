@@ -4,6 +4,54 @@
 import { useState, useEffect } from 'react';
 import { createEmpresa, updateEmpresa } from '../../servicios/api/empresasService';
 
+// Helpers de RUT (copiados desde FormularioUsuario)
+const formatRut = (value) => {
+  const cleaned = value.replace(/[^0-9kK]/g, '').toUpperCase();
+
+  if (cleaned.length === 0) return '';
+  if (cleaned.length === 1) return cleaned;
+
+  const dv = cleaned.slice(-1);
+  const numbers = cleaned.slice(0, -1);
+
+  if (numbers.length === 0) return dv;
+
+  const formatted = numbers.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+
+  return `${formatted}-${dv}`;
+};
+
+const validateRutDigit = (rut) => {
+  const cleaned = rut.replace(/[^0-9kK]/g, '').toUpperCase();
+
+  if (cleaned.length < 2) return false;
+
+  const dv = cleaned.slice(-1);
+  const numbers = cleaned.slice(0, -1);
+
+  if (!/^\d+$/.test(numbers)) return false;
+
+  let sum = 0;
+  let multiplier = 2;
+
+  for (let i = numbers.length - 1; i >= 0; i--) {
+    sum += parseInt(numbers[i], 10) * multiplier;
+    multiplier = multiplier === 7 ? 2 : multiplier + 1;
+  }
+
+  const expectedDv = 11 - (sum % 11);
+  const calculatedDv =
+    expectedDv === 11 ? '0' : expectedDv === 10 ? 'K' : String(expectedDv);
+
+  return dv === calculatedDv;
+};
+
+// Quitar puntos pero mantener el guion en el RUT
+const normalizeRutForSubmit = (rut) => {
+  if (!rut) return '';
+  return rut.replace(/\./g, '');
+};
+
 const FormularioEmpresa = ({ empresa, onClose, onGuardar }) => {
   const [formData, setFormData] = useState({
     rut_empresa: '',
@@ -73,7 +121,14 @@ const FormularioEmpresa = ({ empresa, onClose, onGuardar }) => {
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
-    setFormData(prev => ({ ...prev, [name]: type === 'checkbox' ? checked : value }));
+
+    if (name === 'rut_empresa') {
+      const formatted = formatRut(value);
+      setFormData(prev => ({ ...prev, rut_empresa: formatted }));
+    } else {
+      setFormData(prev => ({ ...prev, [name]: type === 'checkbox' ? checked : value }));
+    }
+
     if (errors[name]) setErrors(prev => ({ ...prev, [name]: '' }));
   };
 
@@ -82,8 +137,8 @@ const FormularioEmpresa = ({ empresa, onClose, onGuardar }) => {
 
     if (!formData.rut_empresa) {
       newErrors.rut_empresa = 'El RUT es obligatorio';
-    } else if (!/^[0-9]{7,8}-[0-9Kk]$/.test(formData.rut_empresa)) {
-      newErrors.rut_empresa = 'Formato de RUT inválido (ej: 12345678-9)';
+    } else if (!validateRutDigit(formData.rut_empresa)) {
+      newErrors.rut_empresa = 'RUT inválido';
     }
 
     if (!formData.razon_social) newErrors.razon_social = 'La razón social es obligatoria';
@@ -108,6 +163,7 @@ const FormularioEmpresa = ({ empresa, onClose, onGuardar }) => {
     setLoading(true);
     try {
       const payload = { ...formData };
+      payload.rut_empresa = normalizeRutForSubmit(formData.rut_empresa);
 
       if (!payload.sector_economico) payload.sector_economico = null;
       if (!payload.giro_comercial) payload.giro_comercial = null;
