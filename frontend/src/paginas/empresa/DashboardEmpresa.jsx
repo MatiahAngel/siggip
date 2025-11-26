@@ -4,18 +4,18 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import FormularioOferta from '../../components/ofertas/FormularioOferta.jsx';
-import { getOfertasByEmpresa } from '../../servicios/api/ofertasService';
-import {
-  getPostulacionesEmpresa,
-  aceptarPostulacionEmpresa,
+import ModalEvaluacionFinal from '../../components/evaluacion/ModalEvaluacionFinal.jsx';
+import { getOfertas } from '../../servicios/api/ofertasService';
+import { 
+  getPostulacionesEmpresa, 
+  aceptarPostulacionEmpresa, 
   rechazarPostulacionEmpresa,
   getPracticantesEmpresa,
-  // ⬇️ NUEVAS IMPORTACIONES para modal de practicantes
   getPlanPractica,
   getBitacoraPracticante,
   getEvaluacionesPracticante,
   validarActividadBitacora,
-  getMiEmpresa
+  verificarEvaluacionFinal
 } from '../../servicios/api/empresasService';
 
 export default function DashboardEmpresa() {
@@ -38,9 +38,11 @@ export default function DashboardEmpresa() {
   const [activeSection, setActiveSection] = useState('inicio');
   const [showCrearOferta, setShowCrearOferta] = useState(false);
   
-  // ⬇️ NUEVO ESTADO para el modal de detalle del practicante
   const [practicanteSeleccionado, setPracticanteSeleccionado] = useState(null);
-  const [miEmpresa, setMiEmpresa] = useState(null);
+  
+  // ⬇️ NUEVOS ESTADOS para evaluación
+  const [mostrarEvaluacion, setMostrarEvaluacion] = useState(false);
+  const [practicanteEvaluar, setPracticanteEvaluar] = useState(null);
 
   useEffect(() => {
     cargarDatos();
@@ -50,13 +52,9 @@ export default function DashboardEmpresa() {
     try {
       setLoading(true);
       setError(null);
-
-      const empresa = await getMiEmpresa();
-      setMiEmpresa(empresa);
-
-      const ofertasApi = await getOfertasByEmpresa(empresa.id_empresa);
-      const listaOfertas = Array.isArray(ofertasApi) ? ofertasApi : [];
-      setOfertas(listaOfertas);
+      
+      const ofertasApi = await getOfertas();
+      setOfertas(Array.isArray(ofertasApi) ? ofertasApi : []);
 
       const posts = await getPostulacionesEmpresa().catch(() => []);
       const listaPost = Array.isArray(posts) ? posts : [];
@@ -70,13 +68,25 @@ export default function DashboardEmpresa() {
       }));
       setPracticantes(practicantesConProgreso);
 
-      const activas = (listaOfertas || []).filter(o => o.estado_oferta === 'activa').length;
+      const activas = (ofertasApi || []).filter(o => o.estado_oferta === 'activa').length;
       const totalPostPend = (listaPost || []).filter(p => ['pendiente', 'en_revision'].includes(p.estado_postulacion)).length;
+      
+      // Contar evaluaciones pendientes
+      let evaluacionesPendientes = 0;
+      for (const prac of practicantesConProgreso) {
+        try {
+          const existe = await verificarEvaluacionFinal(prac.id_practica);
+          if (!existe.existe) evaluacionesPendientes++;
+        } catch (e) {
+          // Ignorar errores
+        }
+      }
+
       setStats({
         ofertasActivas: activas,
         postulacionesPendientes: totalPostPend,
         practicantesActivos: practicantesConProgreso.length,
-        evaluacionesPendientes: 0,
+        evaluacionesPendientes,
       });
 
     } catch (err) {
@@ -318,6 +328,10 @@ export default function DashboardEmpresa() {
                       key={practicante.id_practica} 
                       practicante={practicante}
                       onClick={() => setPracticanteSeleccionado(practicante)}
+                      onEvaluar={(p) => {
+                        setPracticanteEvaluar(p);
+                        setMostrarEvaluacion(true);
+                      }}
                     />
                   ))}
                 </div>
@@ -360,6 +374,10 @@ export default function DashboardEmpresa() {
           <SeccionPracticantes 
             practicantes={practicantes}
             onVerDetalle={(p) => setPracticanteSeleccionado(p)}
+            onEvaluar={(p) => {
+              setPracticanteEvaluar(p);
+              setMostrarEvaluacion(true);
+            }}
           />
         )}
       </main>
@@ -385,12 +403,32 @@ export default function DashboardEmpresa() {
         />
       )}
 
-      {/* ⬇️ NUEVO MODAL para detalle del practicante */}
       {practicanteSeleccionado && (
         <ModalDetallePracticanteNuevo
           practicante={practicanteSeleccionado}
           onClose={() => setPracticanteSeleccionado(null)}
           onRefresh={cargarDatos}
+          onEvaluar={(practicante) => {
+            setPracticanteEvaluar(practicante);
+            setMostrarEvaluacion(true);
+          }}
+        />
+      )}
+
+      {/* ⬇️ NUEVO: Modal de Evaluación Final */}
+      {mostrarEvaluacion && practicanteEvaluar && (
+        <ModalEvaluacionFinal
+          practicante={practicanteEvaluar}
+          onClose={() => {
+            setMostrarEvaluacion(false);
+            setPracticanteEvaluar(null);
+          }}
+          onSuccess={() => {
+            cargarDatos();
+            setMostrarEvaluacion(false);
+            setPracticanteEvaluar(null);
+            setPracticanteSeleccionado(null);
+          }}
         />
       )}
     </div>
@@ -494,52 +532,87 @@ function PostulacionCard({ postulacion }) {
   );
 }
 
-// ⬇️ ACTUALIZADO: ahora acepta onClick
-function PracticanteCard({ practicante, onClick }) {
+function PracticanteCard({ practicante, onClick, onEvaluar }) {
+  // Construir nombre completo
+  const nombreCompleto = `${practicante.estudiante_nombre} ${practicante.apellido_paterno || ''} ${practicante.apellido_materno || ''}`.trim();
+  const iniciales = `${practicante.estudiante_nombre?.charAt(0) || ''}${practicante.apellido_paterno?.charAt(0) || ''}`;
+  
   return (
     <div 
-      onClick={onClick}
-      className="p-5 bg-gradient-to-br from-orange-50 to-amber-50 rounded-2xl border border-orange-200 cursor-pointer hover:shadow-lg hover:border-orange-400 transition"
+      className="p-5 bg-gradient-to-br from-orange-50 to-amber-50 rounded-2xl border border-orange-200 hover:shadow-lg hover:border-orange-400 transition group"
     >
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-3">
-          <div className="w-12 h-12 bg-gradient-to-br from-orange-600 to-amber-600 rounded-full flex items-center justify-center">
-            <span className="text-xl font-bold text-white">{practicante.estudiante_nombre?.charAt(0)}</span>
-          </div>
-          <div>
-            <p className="font-bold text-gray-900">{practicante.estudiante_nombre}</p>
-            <p className="text-sm text-gray-600">{practicante.titulo_oferta}</p>
-          </div>
+      {/* Header con foto y nombre */}
+      <div className="flex items-start gap-3 mb-4">
+        <div className="w-14 h-14 bg-gradient-to-br from-orange-600 to-amber-600 rounded-full flex items-center justify-center flex-shrink-0 shadow-md group-hover:scale-110 transition-transform">
+          <span className="text-xl font-bold text-white">{iniciales}</span>
         </div>
-      </div>
-
-      <div className="flex items-center justify-between mb-3">
-        <div className="flex-1">
-          <div className="flex items-center justify-between text-sm mb-2">
-            <span className="text-gray-600">Progreso</span>
-            <span className="font-bold text-orange-600">{practicante.progreso}%</span>
-          </div>
-          <div className="w-full bg-gray-200 rounded-full h-2">
-            <div className="bg-gradient-to-r from-orange-600 to-amber-600 h-2 rounded-full transition-all" style={{ width: `${practicante.progreso}%` }}></div>
+        <div className="flex-1 min-w-0">
+          <p className="font-bold text-gray-900 text-base leading-tight mb-1.5">{nombreCompleto}</p>
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-blue-100 text-blue-700 rounded-lg text-xs font-semibold">
+              🎓 {practicante.nombre_especialidad || 'Sin especialidad'}
+            </span>
+            {practicante.codigo_especialidad && (
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-purple-100 text-purple-700 rounded-lg text-xs font-bold">
+                {practicante.codigo_especialidad}
+              </span>
+            )}
           </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-3 text-xs">
-        <div className="p-2 bg-white rounded-lg">
-          <p className="text-gray-600">Horas</p>
-          <p className="font-bold text-gray-900">{practicante.horas_completadas}/{practicante.horas_requeridas}</p>
+      {/* Oferta */}
+      <div className="mb-4 p-3 bg-white rounded-xl border border-gray-100">
+        <p className="text-xs text-gray-500 mb-1">Práctica en:</p>
+        <p className="text-sm font-semibold text-gray-900 leading-tight">{practicante.titulo_oferta}</p>
+      </div>
+
+      {/* Progreso */}
+      <div className="mb-4">
+        <div className="flex items-center justify-between text-sm mb-2">
+          <span className="text-gray-600 font-medium">Progreso</span>
+          <span className="font-bold text-orange-600">{practicante.progreso}%</span>
         </div>
-        <div className="p-2 bg-white rounded-lg">
-          <p className="text-gray-600">Inicio</p>
-          <p className="font-bold text-gray-900">{new Date(practicante.fecha_inicio).toLocaleDateString('es-CL')}</p>
+        <div className="w-full bg-gray-200 rounded-full h-2.5 overflow-hidden">
+          <div 
+            className="bg-gradient-to-r from-orange-600 to-amber-600 h-2.5 rounded-full transition-all duration-500 ease-out" 
+            style={{ width: `${practicante.progreso}%` }}
+          ></div>
         </div>
       </div>
 
-      <div className="mt-4 text-center">
-        <span className="text-sm text-orange-600 font-semibold hover:text-orange-700">
-          Ver detalles →
-        </span>
+      {/* Stats */}
+      <div className="grid grid-cols-2 gap-3 text-xs mb-4">
+        <div className="p-2.5 bg-white rounded-lg border border-gray-100">
+          <p className="text-gray-500 mb-1 font-medium">Horas</p>
+          <p className="font-bold text-gray-900 text-base">{practicante.horas_completadas}<span className="text-gray-500 font-normal">/{practicante.horas_requeridas}</span></p>
+        </div>
+        <div className="p-2.5 bg-white rounded-lg border border-gray-100">
+          <p className="text-gray-500 mb-1 font-medium">Inicio</p>
+          <p className="font-bold text-gray-900 text-sm">{new Date(practicante.fecha_inicio).toLocaleDateString('es-CL', { day: '2-digit', month: 'short' })}</p>
+        </div>
+      </div>
+
+      {/* Botones */}
+      <div className="grid grid-cols-2 gap-2">
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onClick();
+          }}
+          className="px-4 py-2.5 bg-white border-2 border-orange-300 text-orange-700 rounded-xl font-semibold hover:bg-orange-50 hover:border-orange-400 transition text-sm"
+        >
+          👁️ Ver detalles
+        </button>
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            if (onEvaluar) onEvaluar(practicante);
+          }}
+          className="px-4 py-2.5 bg-gradient-to-r from-orange-600 to-amber-600 text-white rounded-xl font-semibold hover:from-orange-700 hover:to-amber-700 transition text-sm shadow-md"
+        >
+          📝 Evaluar
+        </button>
       </div>
     </div>
   );
@@ -641,8 +714,7 @@ function SeccionPostulaciones({ postulaciones, onAceptar, onRechazar, respondien
   );
 }
 
-// ⬇️ ACTUALIZADO: ahora acepta onVerDetalle
-function SeccionPracticantes({ practicantes, onVerDetalle }) {
+function SeccionPracticantes({ practicantes, onVerDetalle, onEvaluar }) {
   return (
     <div className="space-y-6">
       <div>
@@ -658,6 +730,7 @@ function SeccionPracticantes({ practicantes, onVerDetalle }) {
                 key={practicante.id_practica} 
                 practicante={practicante}
                 onClick={() => onVerDetalle(practicante)}
+                onEvaluar={onEvaluar}
               />
             ))}
           </div>
@@ -713,10 +786,6 @@ function ModalDetallePostulacion({ postulacion, onClose, onAceptar, onRechazar, 
     </div>
   );
 }
-
-// ⬇️ AGREGA ESTOS DOS COMPONENTES AL FINAL del archivo, ANTES del export default
-
-// ⬇️ AGREGA ESTOS DOS COMPONENTES AL FINAL del archivo, ANTES del export default
 
 function ModalValidarActividad({ actividad, onClose, onValidar, tipo }) {
   const [comentarios, setComentarios] = useState('');
@@ -868,7 +937,8 @@ function ModalValidarActividad({ actividad, onClose, onValidar, tipo }) {
   );
 }
 
-function ModalDetallePracticanteNuevo({ practicante, onClose, onRefresh }) {
+// ⬇️ ACTUALIZADO: Ahora recibe onEvaluar como prop
+function ModalDetallePracticanteNuevo({ practicante, onClose, onRefresh, onEvaluar }) {
   const [loading, setLoading] = useState(true);
   const [bitacora, setBitacora] = useState([]);
   const [actividadSeleccionada, setActividadSeleccionada] = useState(null);
@@ -1059,7 +1129,17 @@ function ModalDetallePracticanteNuevo({ practicante, onClose, onRefresh }) {
             </div>
           </div>
 
-          <div className="px-6 py-4 border-t border-gray-200 bg-gray-50 flex justify-end gap-3">
+          {/* ⬇️ ACTUALIZADO: Footer con botón de evaluación */}
+          <div className="px-6 py-4 border-t border-gray-200 bg-gray-50 flex justify-between gap-3">
+            <button 
+              onClick={() => {
+                if (onEvaluar) onEvaluar(practicante);
+              }}
+              className="px-6 py-3 bg-gradient-to-r from-orange-600 to-amber-600 text-white rounded-xl font-semibold hover:from-orange-700 hover:to-amber-700 transition"
+            >
+              📝 Evaluar Práctica
+            </button>
+            
             <button onClick={onClose} className="px-6 py-3 bg-white border border-gray-300 rounded-xl font-semibold text-gray-700 hover:bg-gray-100 transition">
               Cerrar
             </button>

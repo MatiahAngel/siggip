@@ -188,3 +188,56 @@ export const getDetalleEvaluacion = async (id_evaluacion) => {
   const { data } = await api.get(`/empresas/evaluaciones/${id_evaluacion}`);
   return data;
 };
+
+/**
+ * Obtener estructura completa de evaluación según especialidad
+ */
+export const getEstructuraEvaluacion = async (id_practica) => {
+  const { data } = await api.get(`/empresas/practicantes/${id_practica}/estructura-evaluacion`);
+  return data;
+};
+
+/**
+ * Verificar si ya existe evaluación final para una práctica
+ */
+export const verificarEvaluacionFinal = async (id_practica) => {
+  const { data } = await api.get(`/empresas/practicantes/${id_practica}/evaluacion-final/existe`);
+  return data;
+};
+
+/**
+ * Crear evaluación final completa
+ * @param {number} id_practica 
+ * @param {Object} evaluacion 
+ * @param {Array} evaluacion.evaluaciones_areas - [{id_area_competencia, calificacion, comentarios}]
+ * @param {Array} evaluacion.evaluaciones_tareas - [{id_tarea, nivel_logro, fue_realizada, comentarios}]
+ * @param {Array} evaluacion.evaluaciones_empleabilidad - [{id_competencia_empleabilidad, nivel_logro, observaciones}]
+ * @param {Object} evaluacion.maestro_guia - {nombre, rut, cargo, email, telefono}
+ */
+export const crearEvaluacionFinal = async (id_practica, evaluacion) => {
+  const { data } = await api.post(`/empresas/practicantes/${id_practica}/evaluacion-final`, evaluacion);
+  return data;
+};
+
+/**
+ * Obtener evaluación final completa
+ */
+export const getEvaluacionFinal = async (id_practica) => {
+  const { data } = await api.get(`/empresas/practicantes/${id_practica}/evaluacion-final`);
+  return data;
+};
+
+/**
+ * Actualizar evaluación final existente
+ */
+export const actualizarEvaluacionFinal = async (id_practica, evaluacion) => {
+  const { data } = await api.put(`/empresas/practicantes/${id_practica}/evaluacion-final`, evaluacion);
+  return data;
+};
+
+export const finalizarEvaluacionFinal = async (id_practica) => {
+  const { data } = await api.post(
+    `/empresas/practicantes/${id_practica}/evaluacion-final/finalizar`
+  );
+  return data;
+};
