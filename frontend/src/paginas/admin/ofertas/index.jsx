@@ -6,7 +6,7 @@ import AdminLayout from '../../../components/layout/AdminLayout';
 import FormularioOferta from "../../../components/ofertas/FormularioOferta";
 import DetalleOferta from '../../../components/ofertas/DetalleOferta';
 import ConfirmModal from '../../../components/common/ConfirmModal';
-import { getOfertas, deleteOferta, getEstadisticas } from '../../../servicios/api/ofertasService';
+import { getOfertas, deleteOferta, getEstadisticas, getOfertaById } from '../../../servicios/api/ofertasService';
 
 export default function OfertasPage() {
   const [ofertas, setOfertas] = useState([]);
@@ -96,9 +96,15 @@ export default function OfertasPage() {
     setShowModal(true);
   };
 
-  const handleEditarOferta = (oferta) => {
-    setOfertaEditar(oferta);
-    setShowModal(true);
+  const handleEditarOferta = async (oferta) => {
+    try {
+      const detalle = await getOfertaById(oferta.id_oferta);
+      setOfertaEditar(detalle);
+      setShowModal(true);
+    } catch (err) {
+      console.error('Error al cargar oferta para edición:', err);
+      alert('No se pudo cargar la información completa de la oferta');
+    }
   };
 
   const handleVerDetalle = (oferta) => {

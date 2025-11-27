@@ -8,11 +8,12 @@ import { useAuth } from '../../context/AuthContext';
 
 export default function FormularioOferta({ oferta, onClose, onSuccess }) {
   const { user } = useAuth();
+  const esEdicion = !!oferta;
   // Detecta si el usuario autenticado es del tipo "empresa" (normalizado)
   const isEmpresa = String(user?.tipo_usuario || user?.rol || user?.role || '')
     .toLowerCase() === 'empresa';
   const [formData, setFormData] = useState({
-    id_empresa: '',
+    id_empresa: oferta?.id_empresa || '',
     id_especialidad: '',
     titulo_oferta: '',
     descripcion: '',
@@ -315,8 +316,18 @@ export default function FormularioOferta({ oferta, onClose, onSuccess }) {
                 <label className="block text-xs text-gray-600 font-semibold uppercase mb-2">
                   Empresa <span className="text-red-500">*</span>
                 </label>
-                {isEmpresa ? (
-                  // Usuario empresa: campo fijo (no seleccionable)
+                {esEdicion ? (
+                  <>
+                    <div className="w-full px-3 py-2 border border-gray-200 rounded-lg bg-gray-50 text-gray-800 font-semibold cursor-not-allowed">
+                      {oferta.empresa_nombre
+                        || empresas.find((e) => String(e.id_empresa) === String(formData.id_empresa))?.nombre_comercial
+                        || empresas.find((e) => String(e.id_empresa) === String(formData.id_empresa))?.razon_social
+                        || 'Empresa no disponible'}
+                    </div>
+                    <input type="hidden" name="id_empresa" value={formData.id_empresa} />
+                  </>
+                ) : isEmpresa ? (
+                  // Usuario empresa creando: campo fijo (no seleccionable)
                   <div className="w-full px-3 py-2 border border-gray-200 rounded-lg bg-gray-50 text-gray-800 font-semibold">
                     {miEmpresa?.nombre_comercial
                       || empresas.find((e) => String(e.id_empresa) === String(formData.id_empresa))?.nombre_comercial
@@ -324,7 +335,7 @@ export default function FormularioOferta({ oferta, onClose, onSuccess }) {
                       || 'Empresa no disponible'}
                   </div>
                 ) : (
-                  // Admin u otros roles: selector disponible
+                  // Admin u otros roles creando: selector disponible
                   <select
                     name="id_empresa"
                     value={formData.id_empresa}
@@ -345,18 +356,29 @@ export default function FormularioOferta({ oferta, onClose, onSuccess }) {
                 <label className="block text-xs text-gray-600 font-semibold uppercase mb-2">
                   Especialidad <span className="text-red-500">*</span>
                 </label>
-                <select
-                  name="id_especialidad"
-                  value={formData.id_especialidad}
-                  onChange={handleChange}
-                  required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-500"
-                >
-                  <option value="">Seleccione especialidad</option>
-                  {especialidades.map(esp => (
-                    <option key={esp.id_especialidad} value={esp.id_especialidad}>{esp.nombre_especialidad}</option>
-                  ))}
-                </select>
+                {esEdicion ? (
+                  <>
+                    <div className="w-full px-3 py-2 border border-gray-200 rounded-lg bg-gray-50 text-gray-800 font-semibold cursor-not-allowed">
+                      {especialidades.find((esp) => String(esp.id_especialidad) === String(formData.id_especialidad))?.nombre_especialidad
+                        || oferta.nombre_especialidad
+                        || 'Especialidad no disponible'}
+                    </div>
+                    <input type="hidden" name="id_especialidad" value={formData.id_especialidad} />
+                  </>
+                ) : (
+                  <select
+                    name="id_especialidad"
+                    value={formData.id_especialidad}
+                    onChange={handleChange}
+                    required
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-500"
+                  >
+                    <option value="">Seleccione especialidad</option>
+                    {especialidades.map(esp => (
+                      <option key={esp.id_especialidad} value={esp.id_especialidad}>{esp.nombre_especialidad}</option>
+                    ))}
+                  </select>
+                )}
                 {errors.id_especialidad && <p className="text-red-500 text-xs mt-2">{errors.id_especialidad}</p>}
               </div>
 

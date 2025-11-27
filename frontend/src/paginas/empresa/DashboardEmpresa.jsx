@@ -5,7 +5,8 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import FormularioOferta from '../../components/ofertas/FormularioOferta.jsx';
 import ModalEvaluacionFinal from '../../components/evaluacion/ModalEvaluacionFinal.jsx';
-import { getOfertas } from '../../servicios/api/ofertasService';
+import { getOfertas, getOfertasByEmpresa } from '../../servicios/api/ofertasService';
+import { getMiEmpresa } from '../../servicios/api/empresasService';
 import { 
   getPostulacionesEmpresa, 
   aceptarPostulacionEmpresa, 
@@ -53,8 +54,18 @@ export default function DashboardEmpresa() {
       setLoading(true);
       setError(null);
       
-      const ofertasApi = await getOfertas();
-      setOfertas(Array.isArray(ofertasApi) ? ofertasApi : []);
+      // Identificar la empresa asociada al usuario y cargar solo sus ofertas
+      const miEmp = await getMiEmpresa().catch(() => null);
+      const idEmp = miEmp?.id_empresa ?? miEmp?.id ?? null;
+
+      let ofertasApi = [];
+      if (idEmp) {
+        ofertasApi = await getOfertasByEmpresa(idEmp).catch(() => []);
+      } else {
+        ofertasApi = [];
+      }
+      const listaOfertas = Array.isArray(ofertasApi) ? ofertasApi : [];
+      setOfertas(listaOfertas);
 
       const posts = await getPostulacionesEmpresa().catch(() => []);
       const listaPost = Array.isArray(posts) ? posts : [];
@@ -68,7 +79,7 @@ export default function DashboardEmpresa() {
       }));
       setPracticantes(practicantesConProgreso);
 
-      const activas = (ofertasApi || []).filter(o => o.estado_oferta === 'activa').length;
+      const activas = (listaOfertas || []).filter(o => (o.estado_oferta || o.estado) === 'activa').length;
       const totalPostPend = (listaPost || []).filter(p => ['pendiente', 'en_revision'].includes(p.estado_postulacion)).length;
       
       // Contar evaluaciones pendientes

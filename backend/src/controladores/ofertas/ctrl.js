@@ -9,6 +9,7 @@ export const getOfertas = async (req, res) => {
     const query = `
       SELECT 
         o.id_oferta,
+        o.id_empresa,
         o.codigo_oferta,
         o.titulo_oferta,
         o.descripcion,
