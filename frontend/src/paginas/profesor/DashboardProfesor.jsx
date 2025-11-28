@@ -1,5 +1,6 @@
 // 📁 UBICACIÓN: frontend/src/paginas/profesor/DashboardProfesor.jsx
 // 🎨 Dashboard Profesor con datos reales y navegación
+// ✅ ACTUALIZADO: Importa modal completo con tabs de Bitácora y Evaluaciones
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
@@ -13,6 +14,7 @@ import {
   obtenerEstadisticasProfesor,
   obtenerMisEstudiantes
 } from '../../servicios/api/profesoresService';
+import ModalDetalleEstudiante from '../../components/profesor/ModalDetalleEstudiante';
 
 export default function DashboardProfesor() {
   const { user, logout } = useAuth();
@@ -410,7 +412,7 @@ export default function DashboardProfesor() {
         )}
       </div>
 
-      {/* Modal Detalle Estudiante */}
+      {/* Modal Detalle Estudiante - Ahora con tabs de Bitácora y Evaluaciones */}
       {estudianteSeleccionado && (
         <ModalDetalleEstudiante
           estudiante={estudianteSeleccionado}
@@ -577,63 +579,6 @@ function SeccionEstudiantes({ estudiantes, onVerDetalle }) {
             <p className="text-sm text-gray-600">Aún no tienes prácticas activas para supervisar</p>
           </div>
         )}
-      </div>
-    </div>
-  );
-}
-
-function ModalDetalleEstudiante({ estudiante, onClose }) {
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-      <div className="bg-white w-full max-w-4xl rounded-2xl shadow-2xl overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-green-600 to-emerald-600">
-          <div className="flex items-center justify-between text-white">
-            <div>
-              <h3 className="text-xl font-black">
-                {estudiante.estudiante_nombre} {estudiante.apellido_paterno}
-              </h3>
-              <p className="text-green-100 text-sm">{estudiante.empresa_nombre}</p>
-            </div>
-            <button onClick={onClose} className="text-white hover:bg-white/20 rounded-full p-2 transition">
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          </div>
-        </div>
-
-        <div className="p-6">
-          <div className="text-center py-12">
-            <BookOpen className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-            <h4 className="text-xl font-bold text-gray-900 mb-2">Modal en Desarrollo</h4>
-            <p className="text-gray-600 mb-4">
-              Próximamente: Bitácora, Informes y Evaluación completa
-            </p>
-            <div className="grid grid-cols-3 gap-4 max-w-md mx-auto">
-              <div className="p-4 bg-blue-50 rounded-lg">
-                <FileText className="w-8 h-8 text-blue-600 mx-auto mb-2" />
-                <p className="text-sm font-semibold text-blue-900">Bitácora</p>
-              </div>
-              <div className="p-4 bg-orange-50 rounded-lg">
-                <FileText className="w-8 h-8 text-orange-600 mx-auto mb-2" />
-                <p className="text-sm font-semibold text-orange-900">Informes</p>
-              </div>
-              <div className="p-4 bg-purple-50 rounded-lg">
-                <Award className="w-8 h-8 text-purple-600 mx-auto mb-2" />
-                <p className="text-sm font-semibold text-purple-900">Evaluación</p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="px-6 py-4 border-t border-gray-200 bg-gray-50">
-          <button 
-            onClick={onClose}
-            className="px-6 py-3 bg-gray-600 text-white rounded-xl font-semibold hover:bg-gray-700 transition"
-          >
-            Cerrar
-          </button>
-        </div>
       </div>
     </div>
   );

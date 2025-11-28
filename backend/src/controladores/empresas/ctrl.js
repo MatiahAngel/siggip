@@ -463,11 +463,14 @@ export const aceptarPostulacionEmpresa = async (req, res) => {
     const { id_postulacion } = req.params;
     const { comentarios = '' } = req.body || {};
 
+    // ✅ OBTENER DATOS DE LA POSTULACIÓN Y ESPECIALIDAD DEL ESTUDIANTE
     const sel = await sequelize.query(
       `SELECT p.id_postulacion, p.id_estudiante, p.id_oferta, p.estado_postulacion,
-              o.id_empresa, o.fecha_inicio, o.cupos_disponibles
+              o.id_empresa, o.fecha_inicio, o.cupos_disponibles,
+              est.id_especialidad
        FROM siggip.postulaciones p
        JOIN siggip.ofertas_practica o ON o.id_oferta = p.id_oferta
+       JOIN siggip.estudiantes est ON est.id_estudiante = p.id_estudiante
        WHERE p.id_postulacion = :id_postulacion`,
       { replacements: { id_postulacion }, type: sequelize.QueryTypes.SELECT, transaction: t }
     );
@@ -491,6 +494,28 @@ export const aceptarPostulacionEmpresa = async (req, res) => {
       return res.status(400).json({ error: 'Sin cupos disponibles para la oferta' });
     }
 
+    // ✅ BUSCAR PROFESOR DE LA ESPECIALIDAD
+    const profesorQuery = await sequelize.query(
+      `SELECT p.id_profesor
+       FROM siggip.profesores p
+       WHERE p.id_especialidad = :id_especialidad
+         AND EXISTS (
+           SELECT 1 FROM siggip.usuarios u 
+           WHERE u.id_usuario = p.id_usuario 
+           AND u.estado = 'activo'
+         )
+       ORDER BY p.id_profesor
+       LIMIT 1`,
+      { replacements: { id_especialidad: post.id_especialidad }, type: sequelize.QueryTypes.SELECT, transaction: t }
+    );
+
+    const id_profesor_guia = profesorQuery.length > 0 ? profesorQuery[0].id_profesor : null;
+
+    if (!id_profesor_guia) {
+      console.warn(`⚠️ No se encontró profesor activo para especialidad ${post.id_especialidad}. Práctica sin profesor asignado.`);
+    }
+
+    // Actualizar postulación
     await sequelize.query(
       `UPDATE siggip.postulaciones
        SET estado_postulacion = 'aceptada', fecha_respuesta = CURRENT_TIMESTAMP, comentarios_seleccion = :comentarios
@@ -498,28 +523,47 @@ export const aceptarPostulacionEmpresa = async (req, res) => {
       { replacements: { id_postulacion, comentarios }, type: sequelize.QueryTypes.UPDATE, transaction: t }
     );
 
+    // ✅ CREAR PRÁCTICA CON PROFESOR ASIGNADO
     await sequelize.query(
       `INSERT INTO siggip.practicas (
-        id_estudiante, id_oferta, fecha_inicio_practica, fecha_asignacion, estado_practica, horas_completadas
+        id_estudiante, id_oferta, id_profesor_guia, fecha_inicio_practica, fecha_asignacion, estado_practica, horas_completadas
       ) VALUES (
-        :id_estudiante, :id_oferta, :fecha_inicio, CURRENT_TIMESTAMP, 'asignada', 0
+        :id_estudiante, :id_oferta, :id_profesor_guia, :fecha_inicio, CURRENT_TIMESTAMP, 'asignada', 0
       )`,
-      { replacements: { id_estudiante: post.id_estudiante, id_oferta: post.id_oferta, fecha_inicio: post.fecha_inicio }, type: sequelize.QueryTypes.INSERT, transaction: t }
+      { 
+        replacements: { 
+          id_estudiante: post.id_estudiante, 
+          id_oferta: post.id_oferta, 
+          id_profesor_guia: id_profesor_guia,
+          fecha_inicio: post.fecha_inicio 
+        }, 
+        type: sequelize.QueryTypes.INSERT, 
+        transaction: t 
+      }
     );
 
+    // Decrementar cupos
     await sequelize.query(
       `UPDATE siggip.ofertas_practica SET cupos_disponibles = cupos_disponibles - 1 WHERE id_oferta = :id_oferta`,
       { replacements: { id_oferta: post.id_oferta }, type: sequelize.QueryTypes.UPDATE, transaction: t }
     );
 
     await t.commit();
-    return res.json({ success: true });
+    
+    return res.json({ 
+      success: true,
+      mensaje: id_profesor_guia 
+        ? '✅ Postulación aceptada y profesor asignado automáticamente'
+        : '⚠️ Postulación aceptada. Advertencia: No hay profesor disponible para esta especialidad'
+    });
+    
   } catch (error) {
     await t.rollback();
     console.error('Error al aceptar postulación:', error);
     return res.status(400).json({ error: error.message || 'No fue posible aceptar la postulación' });
   }
 };
+
 
 export const rechazarPostulacionEmpresa = async (req, res) => {
   try {
