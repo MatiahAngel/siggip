@@ -15,6 +15,40 @@ import {
 } from '../../servicios/api/empresasService';
 
 // ═══════════════════════════════════════════════════════════════
+// 🆔 Utilidades de RUT (mismo algoritmo que LoginEstudiante)
+// ═══════════════════════════════════════════════════════════════
+
+const formatRut = (value) => {
+  const cleaned = String(value || '').replace(/[^0-9kK]/g, '').toUpperCase();
+  if (cleaned.length === 0) return '';
+  if (cleaned.length === 1) return cleaned;
+  const dv = cleaned.slice(-1);
+  const numbers = cleaned.slice(0, -1);
+  if (numbers.length === 0) return dv;
+  const formatted = numbers.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+  return `${formatted}-${dv}`;
+};
+
+const validateRutDigit = (rut) => {
+  const cleaned = String(rut || '').replace(/[^0-9kK]/g, '').toUpperCase();
+  if (cleaned.length < 2) return false;
+  const dv = cleaned.slice(-1);
+  const numbers = cleaned.slice(0, -1);
+  if (!/^\d+$/.test(numbers)) return false;
+  let sum = 0;
+  let multiplier = 2;
+  for (let i = numbers.length - 1; i >= 0; i--) {
+    sum += parseInt(numbers[i]) * multiplier;
+    multiplier = multiplier === 7 ? 2 : multiplier + 1;
+  }
+  const expectedDv = 11 - (sum % 11);
+  const calculatedDv = expectedDv === 11 ? '0' : expectedDv === 10 ? 'K' : String(expectedDv);
+  return dv === calculatedDv;
+};
+
+const cleanRut = (rut) => String(rut || '').replace(/\./g, '').replace(/-/g, '');
+
+// ═══════════════════════════════════════════════════════════════
 // 🎨 COMPONENTES DE NOTIFICACIÓN (SIN CSS EXTERNO)
 // ═══════════════════════════════════════════════════════════════
 
@@ -434,6 +468,12 @@ export default function ModalEvaluacionFinal({ practicante, onClose, onSuccess }
         mostrarNotificacion('advertencia', 'El cargo del maestro guía es obligatorio');
         return false;
       }
+      // Validación de RUT si fue ingresado
+      if ((maestroGuia.rut || '').trim() && !validateRutDigit(maestroGuia.rut)) {
+        console.warn('❌ RUT del maestro guía inválido');
+        mostrarNotificacion('advertencia', 'El RUT del maestro guía es inválido');
+        return false;
+      }
     }
 
     console.log(`✅ Paso ${pasoActual} validado`);
@@ -488,7 +528,7 @@ export default function ModalEvaluacionFinal({ practicante, onClose, onSuccess }
         }),
         maestro_guia: {
           nombre: (maestroGuia.nombre || '').trim(),
-          rut: (maestroGuia.rut || '').trim(),
+          rut: cleanRut((maestroGuia.rut || '').trim()),
           cargo: (maestroGuia.cargo || '').trim(),
           email: (maestroGuia.email || '').trim(),
           telefono: (maestroGuia.telefono || '').trim()
@@ -977,6 +1017,8 @@ function PasoRevisar({ estructura, evaluacionesAreas, evaluacionesTareas, evalua
     insuficiente: evaluacionesEmpleabilidad.filter(e => e.nivel_logro === 'insuficiente').length
   };
 
+  const rutInvalido = (maestroGuia.rut || '').trim() !== '' && !validateRutDigit(maestroGuia.rut);
+
   return (
     <div className="space-y-6">
       <div>
@@ -1053,10 +1095,16 @@ function PasoRevisar({ estructura, evaluacionesAreas, evaluacionesTareas, evalua
             <input
               type="text"
               value={maestroGuia.rut}
-              onChange={(e) => onActualizarMaestro({ ...maestroGuia, rut: e.target.value })}
-              className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-orange-500 focus:outline-none"
+              onChange={(e) => onActualizarMaestro({ ...maestroGuia, rut: formatRut(e.target.value) })}
+              maxLength={12}
+              className={`w-full px-4 py-3 border-2 rounded-xl focus:outline-none ${
+                rutInvalido ? 'border-red-500 focus:border-red-600 bg-red-50' : 'border-gray-200 focus:border-orange-500'
+              }`}
               placeholder="12.345.678-9"
             />
+            {rutInvalido && (
+              <p className="mt-2 text-sm text-red-600">RUT inválido</p>
+            )}
           </div>
           <div>
             <label className="block text-sm font-semibold text-gray-900 mb-2">

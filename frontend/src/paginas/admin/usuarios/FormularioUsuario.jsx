@@ -67,7 +67,6 @@ export default function FormularioUsuario({ usuario, onClose }) {
     password: '',
     id_especialidad: '',
     titulo_profesional: '',
-    anos_experiencia: '',
     codigo_profesor: '',
     cargo: '',
     estado: 'activo',
@@ -119,7 +118,6 @@ export default function FormularioUsuario({ usuario, onClose }) {
         password: '',
         id_especialidad: especialidadId,
         titulo_profesional: usuario.datosDocente?.titulo_profesional || '',
-        anos_experiencia: usuario.datosDocente?.anos_experiencia ?? '',
         codigo_profesor: usuario.datosDocente?.codigo_profesor || '',
         cargo: usuario.datosDocente?.cargo || '',
         estado: usuario.estado || 'activo',
@@ -159,10 +157,7 @@ export default function FormularioUsuario({ usuario, onClose }) {
       newErrors.id_especialidad = 'La especialidad es requerida para profesores';
     }
 
-    if (formData.tipo_usuario === 'profesor' && formData.anos_experiencia !== '') {
-      const n = Number(formData.anos_experiencia);
-      if (Number.isNaN(n) || n < 0) newErrors.anos_experiencia = 'Debe ser un número válido (≥ 0)';
-    }
+    // Eliminado el campo "Años de experiencia" para profesor
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -191,7 +186,6 @@ export default function FormularioUsuario({ usuario, onClose }) {
       } else if (formData.tipo_usuario === 'profesor') {
         dataToSend.id_especialidad = parseInt(formData.id_especialidad, 10);
         dataToSend.titulo_profesional = (formData.titulo_profesional || '').trim();
-        dataToSend.anos_experiencia = formData.anos_experiencia ? parseInt(formData.anos_experiencia, 10) : 0;
         dataToSend.codigo_profesor = formData.codigo_profesor || '';
         dataToSend.cargo = formData.cargo || 'Profesor';
         dataToSend.estado_laboral = formData.estado_laboral || 'activo';
@@ -227,8 +221,6 @@ export default function FormularioUsuario({ usuario, onClose }) {
           nextType === 'estudiante' ? prev.ano_ingreso : new Date().getFullYear(),
         titulo_profesional:
           nextType === 'profesor' ? prev.titulo_profesional : '',
-        anos_experiencia:
-          nextType === 'profesor' ? prev.anos_experiencia : '',
         codigo_profesor:
           nextType === 'profesor' ? prev.codigo_profesor : '',
         cargo: nextType === 'profesor' ? prev.cargo : '',
@@ -487,7 +479,7 @@ export default function FormularioUsuario({ usuario, onClose }) {
                     <p className="mt-1 text-xs text-red-600">{errors.id_especialidad}</p>
                   )}
                 </div>
-                
+            
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Título Profesional</label>
                   <input
@@ -498,22 +490,6 @@ export default function FormularioUsuario({ usuario, onClose }) {
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-gray-500"
                     placeholder="Ej: Ingeniero en Informática"
                   />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Años de Experiencia</label>
-                  <input
-                    type="number"
-                    name="anos_experiencia"
-                    value={formData.anos_experiencia}
-                    onChange={handleChange}
-                    min="0"
-                    max="50"
-                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-gray-500 ${errors.anos_experiencia ? 'border-red-400' : 'border-gray-300'}`}
-                  />
-                  {errors.anos_experiencia && (
-                    <p className="mt-1 text-xs text-red-600">{errors.anos_experiencia}</p>
-                  )}
                 </div>
 
                 <div>
