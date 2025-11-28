@@ -1,51 +1,36 @@
-// 📁 frontend/src/paginas/profesor/DashboardProfesor.jsx
-// 🎨 Dashboard Premium para Profesores - Diseño Moderno
+// 📁 UBICACIÓN: frontend/src/paginas/profesor/DashboardProfesor.jsx
+// 🎨 Dashboard Profesor con datos reales y navegación
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { 
-  Users, 
-  FileText, 
-  Clock, 
-  CheckCircle, 
-  AlertCircle,
-  TrendingUp,
-  Calendar,
-  Building2,
-  Award,
-  Eye,
-  Download,
-  Bell,
-  Search,
-  Filter,
-  MoreVertical,
-  BookOpen,
-  Target,
-  Activity,
-  Mail,
-  Phone,
-  MapPin,
-  Briefcase,
-  ChevronRight,
-  Star,
-  BarChart3
+  Users, FileText, Clock, CheckCircle, AlertCircle, TrendingUp,
+  Calendar, Building2, Award, Eye, Bell, BookOpen, Activity,
+  Briefcase, ChevronRight, Star, BarChart3
 } from 'lucide-react';
+import {
+  obtenerPerfilProfesor,
+  obtenerEstadisticasProfesor,
+  obtenerMisEstudiantes
+} from '../../servicios/api/profesoresService';
 
 export default function DashboardProfesor() {
   const { user, logout } = useAuth();
   const [loading, setLoading] = useState(true);
   const [showUserMenu, setShowUserMenu] = useState(false);
-  const [perfil, setPerfil] = useState(null); // Perfil completo del profesor
+  const [activeSection, setActiveSection] = useState('inicio');
+  
+  // Estados de datos
+  const [perfil, setPerfil] = useState(null);
   const [estadisticas, setEstadisticas] = useState({
-    total_estudiantes: 12,
-    practicas_activas: 8,
-    informes_pendientes: 5,
-    evaluaciones_pendientes: 3,
-    tasa_aprobacion: 94
+    total_estudiantes: 0,
+    practicas_activas: 0,
+    informes_pendientes: 0,
+    evaluaciones_pendientes: 0,
+    tasa_aprobacion: 0
   });
-  const [practicasActivas, setPracticasActivas] = useState([]);
-  const [informesPendientes, setInformesPendientes] = useState([]);
-  const [actividadesRecientes, setActividadesRecientes] = useState([]);
+  const [estudiantes, setEstudiantes] = useState([]);
+  const [estudianteSeleccionado, setEstudianteSeleccionado] = useState(null);
 
   useEffect(() => {
     cargarDatos();
@@ -60,134 +45,23 @@ export default function DashboardProfesor() {
     try {
       setLoading(true);
       
-      // Cargar perfil del profesor
-      try {
-        const token = localStorage.getItem('token');
-        const response = await fetch('http://localhost:4000/api/profesores/perfil', {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
-        
-        if (response.ok) {
-          const data = await response.json();
-          setPerfil(data);
-        }
-      } catch (error) {
-        console.error('Error al cargar perfil:', error);
-      }
-      
-      // Datos de ejemplo - MUY MEJORADOS
-      setPracticasActivas([
-        {
-          id: 1,
-          estudiante: 'Juan Pérez González',
-          codigo_estudiante: 'EST001',
-          especialidad: 'Mecánica Industrial',
-          empresa: 'Minera Los Pelambres',
-          supervisor: 'Carlos Ramírez',
-          fecha_inicio: '2025-03-01',
-          horas_completadas: 180,
-          horas_requeridas: 360,
-          estado: 'en_curso',
-          progreso: 50,
-          calificacion_actual: 6.5,
-          ultimo_informe: '2025-10-15'
-        },
-        {
-          id: 2,
-          estudiante: 'María González López',
-          codigo_estudiante: 'EST002',
-          especialidad: 'Agropecuaria',
-          empresa: 'Agrícola Santa Rosa',
-          supervisor: 'Ana Torres',
-          fecha_inicio: '2025-03-15',
-          horas_completadas: 145,
-          horas_requeridas: 360,
-          estado: 'en_curso',
-          progreso: 40,
-          calificacion_actual: 6.8,
-          ultimo_informe: '2025-10-18'
-        },
-        {
-          id: 3,
-          estudiante: 'Pedro Sánchez Rojas',
-          codigo_estudiante: 'EST003',
-          especialidad: 'Mecánica Industrial',
-          empresa: 'Maestranza Central',
-          supervisor: 'Luis Morales',
-          fecha_inicio: '2025-02-20',
-          horas_completadas: 280,
-          horas_requeridas: 360,
-          estado: 'en_curso',
-          progreso: 78,
-          calificacion_actual: 7.0,
-          ultimo_informe: '2025-10-10'
-        }
-      ]);
+      // Cargar perfil
+      const perfilData = await obtenerPerfilProfesor();
+      setPerfil(perfilData);
+      console.log('✅ Perfil cargado:', perfilData);
 
-      setInformesPendientes([
-        {
-          id: 1,
-          estudiante: 'Juan Pérez González',
-          codigo_estudiante: 'EST001',
-          titulo: 'Informe Mensual #3',
-          fecha_envio: '2025-10-18',
-          dias_pendientes: 3,
-          prioridad: 'alta',
-          empresa: 'Minera Los Pelambres'
-        },
-        {
-          id: 2,
-          estudiante: 'María González López',
-          codigo_estudiante: 'EST002',
-          titulo: 'Informe Mensual #2',
-          fecha_envio: '2025-10-15',
-          dias_pendientes: 6,
-          prioridad: 'media',
-          empresa: 'Agrícola Santa Rosa'
-        },
-        {
-          id: 3,
-          estudiante: 'Ana Martínez Silva',
-          codigo_estudiante: 'EST004',
-          titulo: 'Informe Final',
-          fecha_envio: '2025-10-20',
-          dias_pendientes: 1,
-          prioridad: 'urgente',
-          empresa: 'Viña Tabalí'
-        }
-      ]);
+      // Cargar estadísticas
+      const statsData = await obtenerEstadisticasProfesor();
+      setEstadisticas(statsData);
+      console.log('✅ Estadísticas cargadas:', statsData);
 
-      setActividadesRecientes([
-        {
-          id: 1,
-          tipo: 'informe_aprobado',
-          descripcion: 'Aprobaste el Informe #2 de Juan Pérez',
-          fecha: '2025-10-20 14:30',
-          icono: CheckCircle,
-          color: 'text-green-600'
-        },
-        {
-          id: 2,
-          tipo: 'nueva_practica',
-          descripcion: 'Nueva práctica asignada: Pedro Sánchez',
-          fecha: '2025-10-19 10:15',
-          icono: Briefcase,
-          color: 'text-blue-600'
-        },
-        {
-          id: 3,
-          tipo: 'evaluacion',
-          descripcion: 'Evaluación pendiente para María González',
-          fecha: '2025-10-18 16:45',
-          icono: Award,
-          color: 'text-purple-600'
-        }
-      ]);
+      // Cargar estudiantes
+      const estudiantesData = await obtenerMisEstudiantes();
+      setEstudiantes(estudiantesData);
+      console.log('✅ Estudiantes cargados:', estudiantesData);
 
     } catch (error) {
-      console.error('Error cargando datos:', error);
+      console.error('❌ Error cargando datos:', error);
     } finally {
       setLoading(false);
     }
@@ -221,6 +95,34 @@ export default function DashboardProfesor() {
               </div>
             </div>
 
+            {/* Navegación */}
+            <div className="hidden md:flex items-center gap-6">
+              <NavLink 
+                icon="🏠" 
+                label="Inicio" 
+                active={activeSection === 'inicio'} 
+                onClick={() => setActiveSection('inicio')} 
+              />
+              <NavLink 
+                icon="👥" 
+                label="Mis Estudiantes" 
+                active={activeSection === 'estudiantes'} 
+                onClick={() => setActiveSection('estudiantes')} 
+              />
+              <NavLink 
+                icon="📝" 
+                label="Informes" 
+                active={activeSection === 'informes'} 
+                onClick={() => setActiveSection('informes')} 
+              />
+              <NavLink 
+                icon="⭐" 
+                label="Evaluaciones" 
+                active={activeSection === 'evaluaciones'} 
+                onClick={() => setActiveSection('evaluaciones')} 
+              />
+            </div>
+
             {/* Acciones Header */}
             <div className="flex items-center gap-4">
               <button className="relative p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
@@ -243,20 +145,16 @@ export default function DashboardProfesor() {
                   </div>
                 </button>
 
-                {/* Dropdown Menu */}
                 {showUserMenu && (
                   <>
-                    {/* Overlay para cerrar el menú */}
-                    <div 
-                      className="fixed inset-0 z-10"
-                      onClick={() => setShowUserMenu(false)}
-                    ></div>
-                    
-                    {/* Menu */}
+                    <div className="fixed inset-0 z-10" onClick={() => setShowUserMenu(false)}></div>
                     <div className="absolute right-0 mt-2 w-64 bg-white rounded-xl shadow-xl border border-gray-200 py-2 z-20">
                       <div className="px-4 py-3 border-b border-gray-100">
-                        <p className="text-sm font-semibold text-gray-900">{user?.nombre} {user?.apellido_paterno}</p>
-                        <p className="text-xs text-gray-500 mt-1">{user?.email}</p>
+                        <p className="text-sm font-semibold text-gray-900">{perfil?.nombre} {perfil?.apellido_paterno}</p>
+                        <p className="text-xs text-gray-500 mt-1">{perfil?.email}</p>
+                        {perfil?.nombre_especialidad && (
+                          <p className="text-xs text-green-600 mt-1">📚 {perfil.nombre_especialidad}</p>
+                        )}
                       </div>
                       
                       <div className="py-2">
@@ -306,7 +204,7 @@ export default function DashboardProfesor() {
                 </p>
               )}
               <p className="text-green-100 text-lg">
-                Tienes {estadisticas.informes_pendientes} informes pendientes de revisión
+                Tienes {estadisticas.evaluaciones_pendientes} evaluaciones pendientes de certificar
               </p>
             </div>
             <div className="hidden md:flex items-center gap-4">
@@ -333,185 +231,211 @@ export default function DashboardProfesor() {
       {/* Contenido Principal */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         
-        {/* Estadísticas Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
-          <StatCard
-            icon={Users}
-            label="Estudiantes"
-            value={estadisticas.total_estudiantes}
-            change="+2 este mes"
-            color="blue"
-            trend="up"
-          />
-          <StatCard
-            icon={Briefcase}
-            label="Prácticas Activas"
-            value={estadisticas.practicas_activas}
-            change="66% del total"
-            color="green"
-            trend="up"
-          />
-          <StatCard
-            icon={Clock}
-            label="Pendientes"
-            value={estadisticas.informes_pendientes}
-            change="Revisar en 72h"
-            color="orange"
-            trend="neutral"
-          />
-          <StatCard
-            icon={Award}
-            label="Evaluaciones"
-            value={estadisticas.evaluaciones_pendientes}
-            change="2 próximas"
-            color="purple"
-            trend="neutral"
-          />
-          <StatCard
-            icon={TrendingUp}
-            label="Tasa Aprobación"
-            value={`${estadisticas.tasa_aprobacion}%`}
-            change="+3% vs anterior"
-            color="emerald"
-            trend="up"
-          />
-        </div>
+        {activeSection === 'inicio' && (
+          <>
+            {/* Estadísticas Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
+              <StatCard
+                icon={Users}
+                label="Estudiantes"
+                value={estadisticas.total_estudiantes}
+                change={perfil?.nombre_especialidad || 'Total'}
+                color="blue"
+                trend="up"
+              />
+              <StatCard
+                icon={Briefcase}
+                label="Prácticas Activas"
+                value={estadisticas.practicas_activas}
+                change="En supervisión"
+                color="green"
+                trend="up"
+              />
+              <StatCard
+                icon={Clock}
+                label="Completadas"
+                value={estadisticas.practicas_completadas}
+                change="Este año"
+                color="emerald"
+                trend="up"
+              />
+              <StatCard
+                icon={Award}
+                label="Por Certificar"
+                value={estadisticas.evaluaciones_pendientes}
+                change="Pendientes"
+                color="purple"
+                trend="neutral"
+              />
+              <StatCard
+                icon={TrendingUp}
+                label="Tasa Aprobación"
+                value={`${estadisticas.tasa_aprobacion}%`}
+                change="Promedio"
+                color="orange"
+                trend="up"
+              />
+            </div>
 
-        {/* Layout Principal */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          
-          {/* Columna Principal - 2/3 */}
-          <div className="lg:col-span-2 space-y-6">
-            
-            {/* Prácticas Activas */}
-            <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
-              <div className="bg-gradient-to-r from-green-500 to-emerald-500 px-6 py-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="text-xl font-bold text-white flex items-center gap-2">
-                      <Briefcase className="w-6 h-6" />
-                      Prácticas en Curso
-                    </h3>
-                    <p className="text-green-100 text-sm mt-1">
-                      Supervisa el progreso de tus estudiantes
-                    </p>
+            {/* Layout Principal */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+              
+              {/* Columna Principal - 2/3 */}
+              <div className="lg:col-span-2 space-y-6">
+                
+                {/* Prácticas Activas */}
+                <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
+                  <div className="bg-gradient-to-r from-green-500 to-emerald-500 px-6 py-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h3 className="text-xl font-bold text-white flex items-center gap-2">
+                          <Briefcase className="w-6 h-6" />
+                          Prácticas en Curso
+                        </h3>
+                        <p className="text-green-100 text-sm mt-1">
+                          Supervisa el progreso de tus estudiantes
+                        </p>
+                      </div>
+                      <button 
+                        onClick={() => setActiveSection('estudiantes')}
+                        className="px-4 py-2 bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white rounded-lg font-medium transition-colors text-sm"
+                      >
+                        Ver Todos ({estudiantes.length})
+                      </button>
+                    </div>
                   </div>
-                  <button className="px-4 py-2 bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white rounded-lg font-medium transition-colors text-sm">
-                    Ver Todas
-                  </button>
+
+                  <div className="p-6">
+                    <div className="space-y-4">
+                      {estudiantes.slice(0, 3).map((estudiante) => (
+                        <EstudianteCard 
+                          key={estudiante.id_practica} 
+                          estudiante={estudiante}
+                          onClick={() => setEstudianteSeleccionado(estudiante)}
+                        />
+                      ))}
+                      {estudiantes.length === 0 && (
+                        <div className="text-center py-12">
+                          <div className="text-6xl mb-3">👥</div>
+                          <p className="font-semibold text-gray-900">Sin estudiantes asignados</p>
+                          <p className="text-sm text-gray-600">Aún no tienes prácticas activas</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </div>
               </div>
 
-              <div className="p-6">
-                <div className="space-y-4">
-                  {practicasActivas.map((practica) => (
-                    <PracticaCard key={practica.id} practica={practica} />
-                  ))}
+              {/* Columna Lateral - 1/3 */}
+              <div className="space-y-6">
+                
+                {/* Acciones Rápidas */}
+                <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
+                  <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-green-50 to-emerald-50">
+                    <h3 className="font-bold text-gray-900">Acciones Rápidas</h3>
+                  </div>
+                  <div className="p-4">
+                    <div className="space-y-2">
+                      <ActionButton
+                        icon={Users}
+                        label="Mis Estudiantes"
+                        description={`${estudiantes.length} asignados`}
+                        color="blue"
+                        onClick={() => setActiveSection('estudiantes')}
+                      />
+                      <ActionButton
+                        icon={FileText}
+                        label="Revisar Informes"
+                        description="Ver pendientes"
+                        color="orange"
+                        onClick={() => setActiveSection('informes')}
+                      />
+                      <ActionButton
+                        icon={Award}
+                        label="Certificar Evaluaciones"
+                        description={`${estadisticas.evaluaciones_pendientes} pendientes`}
+                        color="purple"
+                        onClick={() => setActiveSection('evaluaciones')}
+                      />
+                      <ActionButton
+                        icon={BarChart3}
+                        label="Reportes"
+                        description="Descargar métricas"
+                        color="green"
+                      />
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </div>
 
-            {/* Actividad Reciente */}
-            <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
-              <div className="px-6 py-4 border-b border-gray-100">
-                <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-                  <Activity className="w-5 h-5 text-blue-600" />
-                  Actividad Reciente
-                </h3>
-              </div>
-              <div className="p-6">
-                <div className="space-y-3">
-                  {actividadesRecientes.map((actividad) => (
-                    <ActividadItem key={actividad.id} actividad={actividad} />
-                  ))}
+                {/* Tips del Día */}
+                <div className="bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl shadow-lg p-6 text-white">
+                  <div className="flex items-start gap-3 mb-3">
+                    <div className="bg-white/20 rounded-lg p-2">
+                      <Star className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-lg mb-1">💡 Consejo del Día</h4>
+                      <p className="text-blue-100 text-sm leading-relaxed">
+                        Revisa las evaluaciones dentro de las primeras 48 horas para dar feedback oportuno a tus estudiantes.
+                      </p>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
+          </>
+        )}
+
+        {activeSection === 'estudiantes' && (
+          <SeccionEstudiantes 
+            estudiantes={estudiantes} 
+            onVerDetalle={(est) => setEstudianteSeleccionado(est)}
+          />
+        )}
+
+        {activeSection === 'informes' && (
+          <div className="bg-white rounded-2xl shadow-xl p-8 text-center">
+            <FileText className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+            <h3 className="text-2xl font-bold text-gray-900 mb-2">Sección de Informes</h3>
+            <p className="text-gray-600">Próximamente...</p>
           </div>
+        )}
 
-          {/* Columna Lateral - 1/3 */}
-          <div className="space-y-6">
-            
-            {/* Informes Pendientes */}
-            <div className="bg-gradient-to-br from-orange-500 to-red-500 rounded-2xl shadow-lg overflow-hidden text-white">
-              <div className="p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-xl font-bold flex items-center gap-2">
-                    <Clock className="w-6 h-6" />
-                    Informes Urgentes
-                  </h3>
-                  <span className="bg-white/20 backdrop-blur-sm px-3 py-1 rounded-full text-sm font-bold">
-                    {informesPendientes.length}
-                  </span>
-                </div>
-                <p className="text-orange-100 text-sm mb-4">
-                  Revisión máxima en 72 horas
-                </p>
-                <div className="space-y-3">
-                  {informesPendientes.map((informe) => (
-                    <InformePendienteCard key={informe.id} informe={informe} />
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            {/* Acciones Rápidas */}
-            <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
-              <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-green-50 to-emerald-50">
-                <h3 className="font-bold text-gray-900">Acciones Rápidas</h3>
-              </div>
-              <div className="p-4">
-                <div className="space-y-2">
-                  <ActionButton
-                    icon={Users}
-                    label="Mis Estudiantes"
-                    description="Ver lista completa"
-                    color="blue"
-                  />
-                  <ActionButton
-                    icon={FileText}
-                    label="Revisar Informes"
-                    description="5 pendientes"
-                    color="orange"
-                  />
-                  <ActionButton
-                    icon={Award}
-                    label="Evaluar Prácticas"
-                    description="3 evaluaciones"
-                    color="purple"
-                  />
-                  <ActionButton
-                    icon={BarChart3}
-                    label="Reportes"
-                    description="Descargar métricas"
-                    color="green"
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Tips del Día */}
-            <div className="bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl shadow-lg p-6 text-white">
-              <div className="flex items-start gap-3 mb-3">
-                <div className="bg-white/20 rounded-lg p-2">
-                  <Star className="w-5 h-5" />
-                </div>
-                <div>
-                  <h4 className="font-bold text-lg mb-1">💡 Consejo del Día</h4>
-                  <p className="text-blue-100 text-sm leading-relaxed">
-                    Revisa los informes dentro de las primeras 48 horas para dar feedback oportuno a tus estudiantes.
-                  </p>
-                </div>
-              </div>
-            </div>
+        {activeSection === 'evaluaciones' && (
+          <div className="bg-white rounded-2xl shadow-xl p-8 text-center">
+            <Award className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+            <h3 className="text-2xl font-bold text-gray-900 mb-2">Certificación de Evaluaciones</h3>
+            <p className="text-gray-600">Próximamente...</p>
           </div>
-        </div>
+        )}
       </div>
+
+      {/* Modal Detalle Estudiante */}
+      {estudianteSeleccionado && (
+        <ModalDetalleEstudiante
+          estudiante={estudianteSeleccionado}
+          onClose={() => setEstudianteSeleccionado(null)}
+        />
+      )}
     </div>
   );
 }
 
 // ==================== COMPONENTES ====================
+
+function NavLink({ icon, label, active, onClick }) {
+  return (
+    <button 
+      onClick={onClick} 
+      className={`flex items-center gap-2 px-4 py-2 rounded-xl font-semibold transition ${
+        active ? 'bg-green-100 text-green-700' : 'text-gray-600 hover:bg-gray-100'
+      }`}
+    >
+      <span>{icon}</span>
+      <span>{label}</span>
+    </button>
+  );
+}
 
 function StatCard({ icon: Icon, label, value, change, color, trend }) {
   const colors = {
@@ -543,33 +467,32 @@ function StatCard({ icon: Icon, label, value, change, color, trend }) {
   );
 }
 
-function PracticaCard({ practica }) {
+function EstudianteCard({ estudiante, onClick }) {
+  const nombreCompleto = `${estudiante.estudiante_nombre} ${estudiante.apellido_paterno || ''} ${estudiante.apellido_materno || ''}`.trim();
+  
   return (
-    <div className="border-2 border-gray-200 rounded-xl p-5 hover:border-green-300 hover:shadow-lg transition-all bg-gradient-to-br from-white to-gray-50">
+    <div 
+      onClick={onClick}
+      className="border-2 border-gray-200 rounded-xl p-5 hover:border-green-300 hover:shadow-lg transition-all bg-gradient-to-br from-white to-gray-50 cursor-pointer"
+    >
       <div className="flex items-start justify-between mb-4">
         <div className="flex-1">
           <div className="flex items-center gap-2 mb-2">
-            <h4 className="font-bold text-gray-900 text-lg">{practica.estudiante}</h4>
+            <h4 className="font-bold text-gray-900 text-lg">{nombreCompleto}</h4>
             <span className="px-2 py-0.5 bg-green-100 text-green-700 text-xs font-bold rounded-full">
-              {practica.codigo_estudiante}
+              {estudiante.codigo_estudiante}
             </span>
           </div>
           <div className="flex flex-wrap gap-3 text-sm text-gray-600">
             <span className="flex items-center gap-1">
               <Building2 className="w-4 h-4" />
-              {practica.empresa}
+              {estudiante.empresa_nombre}
             </span>
             <span className="flex items-center gap-1">
               <BookOpen className="w-4 h-4" />
-              {practica.especialidad}
+              {estudiante.nombre_especialidad}
             </span>
           </div>
-        </div>
-        <div className="text-right">
-          <div className="text-2xl font-black text-green-600">
-            {practica.calificacion_actual}
-          </div>
-          <p className="text-xs text-gray-500">Nota actual</p>
         </div>
       </div>
 
@@ -578,86 +501,32 @@ function PracticaCard({ practica }) {
         <div className="flex items-center justify-between text-sm mb-2">
           <span className="font-medium text-gray-700">Progreso de horas</span>
           <span className="font-bold text-gray-900">
-            {practica.horas_completadas} / {practica.horas_requeridas} hrs
+            {estudiante.horas_completadas} / {estudiante.horas_requeridas} hrs
           </span>
         </div>
         <div className="relative">
           <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
             <div
               className="h-full bg-gradient-to-r from-green-500 to-emerald-500 rounded-full transition-all shadow-inner"
-              style={{ width: `${practica.progreso}%` }}
+              style={{ width: `${estudiante.progreso}%` }}
             ></div>
           </div>
           <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs font-bold text-white drop-shadow">
-            {practica.progreso}%
+            {estudiante.progreso}%
           </span>
         </div>
       </div>
 
-      {/* Acciones */}
-      <div className="grid grid-cols-3 gap-2">
-        <button className="flex items-center justify-center gap-1 px-3 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors text-sm font-semibold">
-          <Eye className="w-4 h-4" />
-          Ver
-        </button>
-        <button className="flex items-center justify-center gap-1 px-3 py-2 bg-orange-50 text-orange-600 rounded-lg hover:bg-orange-100 transition-colors text-sm font-semibold">
-          <FileText className="w-4 h-4" />
-          Informes
-        </button>
-        <button className="flex items-center justify-center gap-1 px-3 py-2 bg-purple-50 text-purple-600 rounded-lg hover:bg-purple-100 transition-colors text-sm font-semibold">
-          <Award className="w-4 h-4" />
-          Evaluar
-        </button>
-      </div>
+      {/* Botón Ver Detalles */}
+      <button className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-green-50 text-green-600 rounded-lg hover:bg-green-100 transition-colors text-sm font-semibold">
+        <Eye className="w-4 h-4" />
+        Ver Detalles
+      </button>
     </div>
   );
 }
 
-function InformePendienteCard({ informe }) {
-  const prioridades = {
-    urgente: { bg: 'bg-red-500', icon: '🚨' },
-    alta: { bg: 'bg-orange-500', icon: '⚠️' },
-    media: { bg: 'bg-yellow-500', icon: '⏰' }
-  };
-  
-  const config = prioridades[informe.prioridad];
-
-  return (
-    <div className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl p-4 hover:bg-white/20 transition-all">
-      <div className="flex items-start gap-3">
-        <div className="text-2xl">{config.icon}</div>
-        <div className="flex-1 min-w-0">
-          <p className="font-bold text-white text-sm truncate">{informe.estudiante}</p>
-          <p className="text-orange-100 text-xs mt-1">{informe.titulo}</p>
-          <p className="text-orange-200 text-xs mt-2">
-            Hace {informe.dias_pendientes} días
-          </p>
-        </div>
-        <button className="p-2 bg-white/20 hover:bg-white/30 rounded-lg transition-colors">
-          <ChevronRight className="w-4 h-4" />
-        </button>
-      </div>
-    </div>
-  );
-}
-
-function ActividadItem({ actividad }) {
-  const Icon = actividad.icono;
-  
-  return (
-    <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
-      <div className={`p-2 bg-white rounded-lg shadow-sm ${actividad.color}`}>
-        <Icon className="w-4 h-4" />
-      </div>
-      <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium text-gray-900">{actividad.descripcion}</p>
-        <p className="text-xs text-gray-500 mt-1">{actividad.fecha}</p>
-      </div>
-    </div>
-  );
-}
-
-function ActionButton({ icon: Icon, label, description, color }) {
+function ActionButton({ icon: Icon, label, description, color, onClick }) {
   const colors = {
     blue: 'bg-blue-50 text-blue-600 hover:bg-blue-100',
     orange: 'bg-orange-50 text-orange-600 hover:bg-orange-100',
@@ -666,7 +535,10 @@ function ActionButton({ icon: Icon, label, description, color }) {
   };
 
   return (
-    <button className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${colors[color]} hover:shadow-md`}>
+    <button 
+      onClick={onClick}
+      className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${colors[color]} hover:shadow-md`}
+    >
       <div className="p-2 bg-white rounded-lg shadow-sm">
         <Icon className="w-5 h-5" />
       </div>
@@ -676,5 +548,93 @@ function ActionButton({ icon: Icon, label, description, color }) {
       </div>
       <ChevronRight className="w-4 h-4" />
     </button>
+  );
+}
+
+function SeccionEstudiantes({ estudiantes, onVerDetalle }) {
+  return (
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-3xl font-black text-gray-900">👥 Mis Estudiantes</h2>
+        <p className="text-gray-600">Supervisa el progreso de tus estudiantes asignados</p>
+      </div>
+
+      <div className="bg-white rounded-3xl shadow-xl p-6">
+        {estudiantes.length > 0 ? (
+          <div className="grid md:grid-cols-2 gap-6">
+            {estudiantes.map(est => (
+              <EstudianteCard 
+                key={est.id_practica} 
+                estudiante={est}
+                onClick={() => onVerDetalle(est)}
+              />
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-12">
+            <div className="text-6xl mb-3">👥</div>
+            <p className="font-semibold text-gray-900">Sin estudiantes asignados</p>
+            <p className="text-sm text-gray-600">Aún no tienes prácticas activas para supervisar</p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function ModalDetalleEstudiante({ estudiante, onClose }) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+      <div className="bg-white w-full max-w-4xl rounded-2xl shadow-2xl overflow-hidden">
+        <div className="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-green-600 to-emerald-600">
+          <div className="flex items-center justify-between text-white">
+            <div>
+              <h3 className="text-xl font-black">
+                {estudiante.estudiante_nombre} {estudiante.apellido_paterno}
+              </h3>
+              <p className="text-green-100 text-sm">{estudiante.empresa_nombre}</p>
+            </div>
+            <button onClick={onClose} className="text-white hover:bg-white/20 rounded-full p-2 transition">
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <div className="p-6">
+          <div className="text-center py-12">
+            <BookOpen className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+            <h4 className="text-xl font-bold text-gray-900 mb-2">Modal en Desarrollo</h4>
+            <p className="text-gray-600 mb-4">
+              Próximamente: Bitácora, Informes y Evaluación completa
+            </p>
+            <div className="grid grid-cols-3 gap-4 max-w-md mx-auto">
+              <div className="p-4 bg-blue-50 rounded-lg">
+                <FileText className="w-8 h-8 text-blue-600 mx-auto mb-2" />
+                <p className="text-sm font-semibold text-blue-900">Bitácora</p>
+              </div>
+              <div className="p-4 bg-orange-50 rounded-lg">
+                <FileText className="w-8 h-8 text-orange-600 mx-auto mb-2" />
+                <p className="text-sm font-semibold text-orange-900">Informes</p>
+              </div>
+              <div className="p-4 bg-purple-50 rounded-lg">
+                <Award className="w-8 h-8 text-purple-600 mx-auto mb-2" />
+                <p className="text-sm font-semibold text-purple-900">Evaluación</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="px-6 py-4 border-t border-gray-200 bg-gray-50">
+          <button 
+            onClick={onClose}
+            className="px-6 py-3 bg-gray-600 text-white rounded-xl font-semibold hover:bg-gray-700 transition"
+          >
+            Cerrar
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }

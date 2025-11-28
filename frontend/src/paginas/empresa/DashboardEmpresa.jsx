@@ -1,11 +1,14 @@
 // 📁 UBICACIÓN: frontend/src/paginas/empresa/DashboardEmpresa.jsx
-// 🎯 PROPÓSITO: Dashboard completo para empresas - Tema naranjo corporativo
+// 🎯 DASHBOARD COMPLETO CON NOTIFICACIONES BONITAS
+// ✅ Sistema de notificaciones sin CSS externo
+// ✅ Verificación de evaluaciones y badges de estado
+// ✅ Botón "Evaluar" condicional según estado
 
 import { useEffect, useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import FormularioOferta from '../../components/ofertas/FormularioOferta.jsx';
 import ModalEvaluacionFinal from '../../components/evaluacion/ModalEvaluacionFinal.jsx';
-import { getOfertas, getOfertasByEmpresa } from '../../servicios/api/ofertasService';
+import { getOfertasByEmpresa } from '../../servicios/api/ofertasService';
 import { getMiEmpresa } from '../../servicios/api/empresasService';
 import { 
   getPostulacionesEmpresa, 
@@ -19,6 +22,166 @@ import {
   verificarEvaluacionFinal
 } from '../../servicios/api/empresasService';
 
+// ============ COMPONENTE: Notificación Toast ============
+function Notificacion({ tipo, mensaje, onClose }) {
+  const [visible, setVisible] = useState(false);
+  const [saliendo, setSaliendo] = useState(false);
+
+  useEffect(() => {
+    setTimeout(() => setVisible(true), 10);
+    const timer = setTimeout(() => {
+      setSaliendo(true);
+      setTimeout(onClose, 300);
+    }, 4000);
+    return () => clearTimeout(timer);
+  }, [onClose]);
+
+  const configs = {
+    exito: {
+      bg: 'bg-gradient-to-r from-emerald-500 to-emerald-600',
+      icono: '✅',
+      titulo: '¡Éxito!'
+    },
+    error: {
+      bg: 'bg-gradient-to-r from-red-500 to-red-600',
+      icono: '❌',
+      titulo: 'Error'
+    },
+    advertencia: {
+      bg: 'bg-gradient-to-r from-amber-500 to-amber-600',
+      icono: '⚠️',
+      titulo: 'Atención'
+    },
+    info: {
+      bg: 'bg-gradient-to-r from-blue-500 to-blue-600',
+      icono: 'ℹ️',
+      titulo: 'Información'
+    }
+  };
+
+  const config = configs[tipo] || configs.info;
+
+  return (
+    <div 
+      className="fixed top-4 right-4 z-[9999] max-w-md min-w-[320px]"
+      style={{
+        transform: visible && !saliendo ? 'translateX(0)' : 'translateX(400px)',
+        opacity: visible && !saliendo ? 1 : 0,
+        transition: 'all 0.3s ease-out'
+      }}
+    >
+      <div className={`${config.bg} text-white rounded-2xl shadow-2xl p-5`}>
+        <div className="flex items-start gap-4">
+          <div className="text-3xl flex-shrink-0">{config.icono}</div>
+          <div className="flex-1 min-w-0">
+            <h4 className="font-black text-lg mb-1">{config.titulo}</h4>
+            <p className="text-white/90 text-sm leading-relaxed break-words">{mensaje}</p>
+          </div>
+          <button 
+            onClick={() => {
+              setSaliendo(true);
+              setTimeout(onClose, 300);
+            }}
+            className="text-white/80 hover:text-white transition flex-shrink-0"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ============ COMPONENTE: Modal de Confirmación ============
+function ModalConfirmacion({ titulo, mensaje, onConfirmar, onCancelar, tipo = 'info' }) {
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    setTimeout(() => setVisible(true), 10);
+  }, []);
+
+  const configs = {
+    info: {
+      bg: 'from-blue-600 to-blue-500',
+      icono: 'ℹ️',
+      botonTexto: 'Confirmar',
+      botonClase: 'bg-blue-600 hover:bg-blue-700'
+    },
+    advertencia: {
+      bg: 'from-amber-600 to-amber-500',
+      icono: '⚠️',
+      botonTexto: 'Continuar',
+      botonClase: 'bg-amber-600 hover:bg-amber-700'
+    },
+    peligro: {
+      bg: 'from-red-600 to-red-500',
+      icono: '🚨',
+      botonTexto: 'Confirmar',
+      botonClase: 'bg-red-600 hover:bg-red-700'
+    },
+    exito: {
+      bg: 'from-emerald-600 to-emerald-500',
+      icono: '✅',
+      botonTexto: 'Aceptar',
+      botonClase: 'bg-emerald-600 hover:bg-emerald-700'
+    }
+  };
+
+  const config = configs[tipo] || configs.info;
+
+  return (
+    <div 
+      className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 p-4"
+      style={{
+        opacity: visible ? 1 : 0,
+        transition: 'opacity 0.2s ease-out'
+      }}
+    >
+      <div 
+        className="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden"
+        style={{
+          transform: visible ? 'scale(1)' : 'scale(0.9)',
+          opacity: visible ? 1 : 0,
+          transition: 'all 0.3s ease-out'
+        }}
+      >
+        <div className={`px-6 py-5 bg-gradient-to-r ${config.bg}`}>
+          <div className="flex items-center gap-4 text-white">
+            <div className="w-14 h-14 bg-white/20 backdrop-blur rounded-full flex items-center justify-center flex-shrink-0">
+              <span className="text-3xl">{config.icono}</span>
+            </div>
+            <div className="flex-1">
+              <h3 className="text-xl font-black">{titulo}</h3>
+            </div>
+          </div>
+        </div>
+
+        <div className="p-6">
+          <p className="text-gray-700 text-base leading-relaxed whitespace-pre-line">{mensaje}</p>
+        </div>
+
+        <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex items-center justify-end gap-3">
+          <button
+            onClick={onCancelar}
+            className="px-6 py-3 bg-white border-2 border-gray-300 text-gray-700 rounded-xl font-semibold hover:bg-gray-100 transition"
+          >
+            Cancelar
+          </button>
+          <button
+            onClick={onConfirmar}
+            className={`px-6 py-3 text-white rounded-xl font-semibold transition ${config.botonClase}`}
+          >
+            {config.botonTexto}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ============ COMPONENTE PRINCIPAL ============
 export default function DashboardEmpresa() {
   const { user, logout } = useAuth();
   const [loading, setLoading] = useState(true);
@@ -40,10 +203,30 @@ export default function DashboardEmpresa() {
   const [showCrearOferta, setShowCrearOferta] = useState(false);
   
   const [practicanteSeleccionado, setPracticanteSeleccionado] = useState(null);
-  
-  // ⬇️ NUEVOS ESTADOS para evaluación
   const [mostrarEvaluacion, setMostrarEvaluacion] = useState(false);
   const [practicanteEvaluar, setPracticanteEvaluar] = useState(null);
+
+  // Estados para notificaciones bonitas
+  const [notificacion, setNotificacion] = useState(null);
+  const [modalConfirmacion, setModalConfirmacion] = useState(null);
+
+  // Estado para almacenar evaluaciones de practicantes
+  const [evaluacionesPracticantes, setEvaluacionesPracticantes] = useState({});
+
+  // Funciones auxiliares para notificaciones
+  const mostrarNotificacion = (tipo, mensaje) => {
+    setNotificacion({ tipo, mensaje });
+  };
+
+  const mostrarConfirmacion = (tipo, titulo, mensaje, onConfirmar) => {
+    setModalConfirmacion({
+      tipo,
+      titulo,
+      mensaje,
+      onConfirmar,
+      onCancelar: () => setModalConfirmacion(null)
+    });
+  };
 
   useEffect(() => {
     cargarDatos();
@@ -54,7 +237,6 @@ export default function DashboardEmpresa() {
       setLoading(true);
       setError(null);
       
-      // Identificar la empresa asociada al usuario y cargar solo sus ofertas
       const miEmp = await getMiEmpresa().catch(() => null);
       const idEmp = miEmp?.id_empresa ?? miEmp?.id ?? null;
 
@@ -79,19 +261,30 @@ export default function DashboardEmpresa() {
       }));
       setPracticantes(practicantesConProgreso);
 
-      const activas = (listaOfertas || []).filter(o => (o.estado_oferta || o.estado) === 'activa').length;
-      const totalPostPend = (listaPost || []).filter(p => ['pendiente', 'en_revision'].includes(p.estado_postulacion)).length;
-      
-      // Contar evaluaciones pendientes
+      // Verificar evaluaciones para cada practicante
+      const evaluacionesMap = {};
       let evaluacionesPendientes = 0;
+      
       for (const prac of practicantesConProgreso) {
         try {
-          const existe = await verificarEvaluacionFinal(prac.id_practica);
-          if (!existe.existe) evaluacionesPendientes++;
+          const resultado = await verificarEvaluacionFinal(prac.id_practica);
+          evaluacionesMap[prac.id_practica] = resultado;
+
+          const estado = resultado?.evaluacion?.estado_evaluacion;
+
+          
+          if (prac.progreso >= 80 && (!resultado.existe || estado !== 'completada')) {
+            evaluacionesPendientes++;
+          }
         } catch (e) {
-          // Ignorar errores
+          evaluacionesMap[prac.id_practica] = { existe: false };
         }
       }
+      
+      setEvaluacionesPracticantes(evaluacionesMap);
+
+      const activas = (listaOfertas || []).filter(o => (o.estado_oferta || o.estado) === 'activa').length;
+      const totalPostPend = (listaPost || []).filter(p => ['pendiente', 'en_revision'].includes(p.estado_postulacion)).length;
 
       setStats({
         ofertasActivas: activas,
@@ -113,32 +306,48 @@ export default function DashboardEmpresa() {
   };
 
   const handleAceptar = async (post) => {
-    const ok = window.confirm(`Aceptar postulación de ${post.estudiante_nombre} a "${post.titulo_oferta}"?`);
-    if (!ok) return;
-    setRespondiendoId(post.id_postulacion);
-    try {
-      await aceptarPostulacionEmpresa(post.id_postulacion);
-      await cargarDatos();
-    } catch (e) {
-      alert('Error al aceptar: ' + (e.response?.data?.error || e.message));
-    } finally {
-      setRespondiendoId(null);
-    }
+    mostrarConfirmacion(
+      'exito',
+      'Aceptar Postulación',
+      `¿Confirmas que deseas aceptar la postulación de ${post.estudiante_nombre} para "${post.titulo_oferta}"?\n\nEsta acción iniciará el proceso de práctica profesional.`,
+      async () => {
+        setModalConfirmacion(null);
+        setRespondiendoId(post.id_postulacion);
+        try {
+          await aceptarPostulacionEmpresa(post.id_postulacion);
+          await cargarDatos();
+          mostrarNotificacion('exito', `Postulación de ${post.estudiante_nombre} aceptada exitosamente`);
+        } catch (e) {
+          mostrarNotificacion('error', e.response?.data?.error || 'Error al aceptar la postulación');
+        } finally {
+          setRespondiendoId(null);
+        }
+      }
+    );
   };
 
   const handleRechazar = async (post) => {
-    const comentarios = window.prompt(`Motivo de rechazo para ${post.estudiante_nombre} (opcional):`, '') || '';
-    const ok = window.confirm(`Rechazar postulación de ${post.estudiante_nombre} a "${post.titulo_oferta}"?`);
-    if (!ok) return;
-    setRespondiendoId(post.id_postulacion);
-    try {
-      await rechazarPostulacionEmpresa(post.id_postulacion, comentarios);
-      await cargarDatos();
-    } catch (e) {
-      alert('Error al rechazar: ' + (e.response?.data?.error || e.message));
-    } finally {
-      setRespondiendoId(null);
-    }
+    const comentarios = prompt(`Motivo de rechazo para ${post.estudiante_nombre}:`, '');
+    if (comentarios === null) return;
+    
+    mostrarConfirmacion(
+      'peligro',
+      'Rechazar Postulación',
+      `¿Confirmas que deseas rechazar la postulación de ${post.estudiante_nombre}?\n\nMotivo: ${comentarios || 'Sin motivo especificado'}`,
+      async () => {
+        setModalConfirmacion(null);
+        setRespondiendoId(post.id_postulacion);
+        try {
+          await rechazarPostulacionEmpresa(post.id_postulacion, comentarios);
+          await cargarDatos();
+          mostrarNotificacion('info', `Postulación de ${post.estudiante_nombre} rechazada`);
+        } catch (e) {
+          mostrarNotificacion('error', e.response?.data?.error || 'Error al rechazar la postulación');
+        } finally {
+          setRespondiendoId(null);
+        }
+      }
+    );
   };
 
   if (loading) {
@@ -169,6 +378,25 @@ export default function DashboardEmpresa() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50">
+      {/* Sistema de notificaciones */}
+      {notificacion && (
+        <Notificacion
+          tipo={notificacion.tipo}
+          mensaje={notificacion.mensaje}
+          onClose={() => setNotificacion(null)}
+        />
+      )}
+
+      {modalConfirmacion && (
+        <ModalConfirmacion
+          tipo={modalConfirmacion.tipo}
+          titulo={modalConfirmacion.titulo}
+          mensaje={modalConfirmacion.mensaje}
+          onConfirmar={modalConfirmacion.onConfirmar}
+          onCancelar={modalConfirmacion.onCancelar}
+        />
+      )}
+
       {/* Header/Navbar */}
       <nav className="bg-white/80 backdrop-blur-xl border-b border-gray-200 sticky top-0 z-50 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -338,6 +566,7 @@ export default function DashboardEmpresa() {
                     <PracticanteCard 
                       key={practicante.id_practica} 
                       practicante={practicante}
+                      evaluacion={evaluacionesPracticantes[practicante.id_practica]}
                       onClick={() => setPracticanteSeleccionado(practicante)}
                       onEvaluar={(p) => {
                         setPracticanteEvaluar(p);
@@ -384,6 +613,7 @@ export default function DashboardEmpresa() {
         {activeSection === 'practicantes' && (
           <SeccionPracticantes 
             practicantes={practicantes}
+            evaluacionesPracticantes={evaluacionesPracticantes}
             onVerDetalle={(p) => setPracticanteSeleccionado(p)}
             onEvaluar={(p) => {
               setPracticanteEvaluar(p);
@@ -410,6 +640,7 @@ export default function DashboardEmpresa() {
             cargarDatos();
             setShowCrearOferta(false);
             setActiveSection('ofertas');
+            mostrarNotificacion('exito', 'Oferta publicada exitosamente');
           }}
         />
       )}
@@ -417,16 +648,17 @@ export default function DashboardEmpresa() {
       {practicanteSeleccionado && (
         <ModalDetallePracticanteNuevo
           practicante={practicanteSeleccionado}
+          evaluacion={evaluacionesPracticantes[practicanteSeleccionado.id_practica]}
           onClose={() => setPracticanteSeleccionado(null)}
           onRefresh={cargarDatos}
           onEvaluar={(practicante) => {
             setPracticanteEvaluar(practicante);
             setMostrarEvaluacion(true);
           }}
+          mostrarNotificacion={mostrarNotificacion}
         />
       )}
 
-      {/* ⬇️ NUEVO: Modal de Evaluación Final */}
       {mostrarEvaluacion && practicanteEvaluar && (
         <ModalEvaluacionFinal
           practicante={practicanteEvaluar}
@@ -434,11 +666,12 @@ export default function DashboardEmpresa() {
             setMostrarEvaluacion(false);
             setPracticanteEvaluar(null);
           }}
-          onSuccess={() => {
-            cargarDatos();
+          onSuccess={async () => {
+            await cargarDatos();
             setMostrarEvaluacion(false);
             setPracticanteEvaluar(null);
             setPracticanteSeleccionado(null);
+            mostrarNotificacion('exito', 'Evaluación final completada exitosamente');
           }}
         />
       )}
@@ -543,16 +776,42 @@ function PostulacionCard({ postulacion }) {
   );
 }
 
-function PracticanteCard({ practicante, onClick, onEvaluar }) {
-  // Construir nombre completo
+function PracticanteCard({ practicante, evaluacion, onClick, onEvaluar }) {
   const nombreCompleto = `${practicante.estudiante_nombre} ${practicante.apellido_paterno || ''} ${practicante.apellido_materno || ''}`.trim();
   const iniciales = `${practicante.estudiante_nombre?.charAt(0) || ''}${practicante.apellido_paterno?.charAt(0) || ''}`;
+  
+  const tieneEvaluacion = evaluacion?.existe;
+  const estadoEvaluacion = evaluacion?.evaluacion?.estado_evaluacion;
+  
+  // Badge superior (estado general)
+  let badgeEvaluacion = null;
+  if (tieneEvaluacion) {
+    if (estadoEvaluacion === 'completada') {
+      badgeEvaluacion = {
+        texto: '✅ Evaluado',
+        clase: 'bg-emerald-100 text-emerald-700 border-emerald-300'
+      };
+    } else if (estadoEvaluacion === 'en_proceso') {
+      badgeEvaluacion = {
+        texto: '📝 En proceso',
+        clase: 'bg-amber-100 text-amber-700 border-amber-300'
+      };
+    }
+  } else if (practicante.progreso >= 80) {
+    badgeEvaluacion = {
+      texto: '⏳ Pendiente',
+      clase: 'bg-orange-100 text-orange-700 border-orange-300'
+    };
+  }
+
+  // Determinar qué mostrar en los botones
+  const evaluacionCompletada = tieneEvaluacion && estadoEvaluacion === 'completada';
+  const puedeEvaluar = !evaluacionCompletada && practicante.progreso >= 80;
   
   return (
     <div 
       className="p-5 bg-gradient-to-br from-orange-50 to-amber-50 rounded-2xl border border-orange-200 hover:shadow-lg hover:border-orange-400 transition group"
     >
-      {/* Header con foto y nombre */}
       <div className="flex items-start gap-3 mb-4">
         <div className="w-14 h-14 bg-gradient-to-br from-orange-600 to-amber-600 rounded-full flex items-center justify-center flex-shrink-0 shadow-md group-hover:scale-110 transition-transform">
           <span className="text-xl font-bold text-white">{iniciales}</span>
@@ -572,13 +831,19 @@ function PracticanteCard({ practicante, onClick, onEvaluar }) {
         </div>
       </div>
 
-      {/* Oferta */}
+      {badgeEvaluacion && (
+        <div className="mb-4">
+          <div className={`inline-flex items-center gap-2 px-3 py-2 rounded-xl border-2 ${badgeEvaluacion.clase} font-bold text-sm`}>
+            <span>{badgeEvaluacion.texto}</span>
+          </div>
+        </div>
+      )}
+
       <div className="mb-4 p-3 bg-white rounded-xl border border-gray-100">
         <p className="text-xs text-gray-500 mb-1">Práctica en:</p>
         <p className="text-sm font-semibold text-gray-900 leading-tight">{practicante.titulo_oferta}</p>
       </div>
 
-      {/* Progreso */}
       <div className="mb-4">
         <div className="flex items-center justify-between text-sm mb-2">
           <span className="text-gray-600 font-medium">Progreso</span>
@@ -592,7 +857,6 @@ function PracticanteCard({ practicante, onClick, onEvaluar }) {
         </div>
       </div>
 
-      {/* Stats */}
       <div className="grid grid-cols-2 gap-3 text-xs mb-4">
         <div className="p-2.5 bg-white rounded-lg border border-gray-100">
           <p className="text-gray-500 mb-1 font-medium">Horas</p>
@@ -604,26 +868,41 @@ function PracticanteCard({ practicante, onClick, onEvaluar }) {
         </div>
       </div>
 
-      {/* Botones */}
-      <div className="grid grid-cols-2 gap-2">
+      {/* BOTONES CONDICIONALES */}
+      <div className="space-y-2">
         <button
           onClick={(e) => {
             e.stopPropagation();
             onClick();
           }}
-          className="px-4 py-2.5 bg-white border-2 border-orange-300 text-orange-700 rounded-xl font-semibold hover:bg-orange-50 hover:border-orange-400 transition text-sm"
+          className="w-full px-4 py-2.5 bg-white border-2 border-orange-300 text-orange-700 rounded-xl font-semibold hover:bg-orange-50 hover:border-orange-400 transition text-sm"
         >
           👁️ Ver detalles
         </button>
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            if (onEvaluar) onEvaluar(practicante);
-          }}
-          className="px-4 py-2.5 bg-gradient-to-r from-orange-600 to-amber-600 text-white rounded-xl font-semibold hover:from-orange-700 hover:to-amber-700 transition text-sm shadow-md"
-        >
-          📝 Evaluar
-        </button>
+        
+        {evaluacionCompletada ? (
+          // Si está completada, mostrar badge grande
+          <div className="w-full px-4 py-3 bg-gradient-to-r from-emerald-600 to-emerald-500 text-white rounded-xl font-bold text-center border-2 border-emerald-400 shadow-md flex items-center justify-center gap-2">
+            <span className="text-xl">✅</span>
+            <span>Evaluación Completada</span>
+          </div>
+        ) : puedeEvaluar ? (
+          // Si puede evaluar, mostrar botón
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              if (onEvaluar) onEvaluar(practicante);
+            }}
+            className="w-full px-4 py-2.5 bg-gradient-to-r from-orange-600 to-amber-600 text-white rounded-xl font-semibold hover:from-orange-700 hover:to-amber-700 transition text-sm shadow-md"
+          >
+            {tieneEvaluacion && estadoEvaluacion === 'en_proceso' ? '📝 Continuar Evaluación' : '📝 Evaluar'}
+          </button>
+        ) : (
+          // Si no puede evaluar (progreso < 80%), mostrar mensaje
+          <div className="w-full px-4 py-3 bg-gray-100 text-gray-500 rounded-xl font-semibold text-center text-sm">
+            Evaluación disponible al 80% de progreso
+          </div>
+        )}
       </div>
     </div>
   );
@@ -725,7 +1004,7 @@ function SeccionPostulaciones({ postulaciones, onAceptar, onRechazar, respondien
   );
 }
 
-function SeccionPracticantes({ practicantes, onVerDetalle, onEvaluar }) {
+function SeccionPracticantes({ practicantes, evaluacionesPracticantes, onVerDetalle, onEvaluar }) {
   return (
     <div className="space-y-6">
       <div>
@@ -740,6 +1019,7 @@ function SeccionPracticantes({ practicantes, onVerDetalle, onEvaluar }) {
               <PracticanteCard 
                 key={practicante.id_practica} 
                 practicante={practicante}
+                evaluacion={evaluacionesPracticantes[practicante.id_practica]}
                 onClick={() => onVerDetalle(practicante)}
                 onEvaluar={onEvaluar}
               />
@@ -798,14 +1078,14 @@ function ModalDetallePostulacion({ postulacion, onClose, onAceptar, onRechazar, 
   );
 }
 
-function ModalValidarActividad({ actividad, onClose, onValidar, tipo }) {
+function ModalValidarActividad({ actividad, onClose, onValidar, tipo, mostrarNotificacion }) {
   const [comentarios, setComentarios] = useState('');
   const [horas, setHoras] = useState(actividad?.horas_dedicadas || 0);
   const [validando, setValidando] = useState(false);
 
   const handleSubmit = async () => {
     if (tipo === 'rechazar' && !comentarios.trim()) {
-      alert('Debes proporcionar un motivo de rechazo');
+      mostrarNotificacion('advertencia', 'Debes proporcionar un motivo de rechazo');
       return;
     }
 
@@ -813,8 +1093,10 @@ function ModalValidarActividad({ actividad, onClose, onValidar, tipo }) {
     try {
       await onValidar(comentarios, horas);
       onClose();
+      mostrarNotificacion('exito', `Actividad ${tipo === 'aprobar' ? 'aprobada' : 'rechazada'} correctamente`);
     } catch (error) {
       setValidando(false);
+      mostrarNotificacion('error', 'Error al validar la actividad');
     }
   };
 
@@ -948,8 +1230,7 @@ function ModalValidarActividad({ actividad, onClose, onValidar, tipo }) {
   );
 }
 
-// ⬇️ ACTUALIZADO: Ahora recibe onEvaluar como prop
-function ModalDetallePracticanteNuevo({ practicante, onClose, onRefresh, onEvaluar }) {
+function ModalDetallePracticanteNuevo({ practicante, evaluacion, onClose, onRefresh, onEvaluar, mostrarNotificacion }) {
   const [loading, setLoading] = useState(true);
   const [bitacora, setBitacora] = useState([]);
   const [actividadSeleccionada, setActividadSeleccionada] = useState(null);
@@ -988,7 +1269,6 @@ function ModalDetallePracticanteNuevo({ practicante, onClose, onRefresh, onEvalu
       if (onRefresh) onRefresh();
       setActividadSeleccionada(null);
       setTipoValidacion(null);
-      alert(`Actividad ${tipoValidacion === 'aprobar' ? 'aprobada' : 'rechazada'} correctamente`);
     } catch (error) {
       throw error;
     }
@@ -1003,6 +1283,11 @@ function ModalDetallePracticanteNuevo({ practicante, onClose, onRefresh, onEvalu
       </div>
     );
   }
+
+  const estadoEvaluacion = evaluacion?.evaluacion?.estado_evaluacion;
+  const mostrarBotonEvaluar = 
+    practicante.progreso >= 80 && 
+    (!evaluacion?.existe || estadoEvaluacion !== 'completada');
 
   return (
     <>
@@ -1140,18 +1425,19 @@ function ModalDetallePracticanteNuevo({ practicante, onClose, onRefresh, onEvalu
             </div>
           </div>
 
-          {/* ⬇️ ACTUALIZADO: Footer con botón de evaluación */}
           <div className="px-6 py-4 border-t border-gray-200 bg-gray-50 flex justify-between gap-3">
-            <button 
-              onClick={() => {
-                if (onEvaluar) onEvaluar(practicante);
-              }}
-              className="px-6 py-3 bg-gradient-to-r from-orange-600 to-amber-600 text-white rounded-xl font-semibold hover:from-orange-700 hover:to-amber-700 transition"
-            >
-              📝 Evaluar Práctica
-            </button>
+            {mostrarBotonEvaluar && (
+              <button 
+                onClick={() => {
+                  if (onEvaluar) onEvaluar(practicante);
+                }}
+                className="px-6 py-3 bg-gradient-to-r from-orange-600 to-amber-600 text-white rounded-xl font-semibold hover:from-orange-700 hover:to-amber-700 transition"
+              >
+                📝 Evaluar Práctica
+              </button>
+            )}
             
-            <button onClick={onClose} className="px-6 py-3 bg-white border border-gray-300 rounded-xl font-semibold text-gray-700 hover:bg-gray-100 transition">
+            <button onClick={onClose} className="px-6 py-3 bg-white border border-gray-300 rounded-xl font-semibold text-gray-700 hover:bg-gray-100 transition ml-auto">
               Cerrar
             </button>
           </div>
@@ -1167,6 +1453,7 @@ function ModalDetallePracticanteNuevo({ practicante, onClose, onRefresh, onEvalu
             setTipoValidacion(null);
           }}
           onValidar={handleValidar}
+          mostrarNotificacion={mostrarNotificacion}
         />
       )}
     </>

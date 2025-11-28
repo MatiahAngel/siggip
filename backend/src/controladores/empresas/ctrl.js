@@ -1,5 +1,8 @@
 // 📁 UBICACIÓN: backend/src/controladores/empresas/ctrl.js
-// Controlador para gestionar empresas
+// ✅ VERSIÓN CORREGIDA CON:
+// - id_estudiante e id_profesor_guia en evaluaciones_finales
+// - estado_evaluacion actualizado correctamente a 'completada'
+// - Todos los fixes aplicados
 
 import Empresa from '../../modelos/Empresa.js';
 import { Op } from 'sequelize';
@@ -9,7 +12,6 @@ import bcrypt from 'bcryptjs';
 // ============================================================================
 // 🔧 FUNCIÓN HELPER PARA MAPEAR NIVEL DE LOGRO
 // ============================================================================
-// Convierte valores del frontend ('excelente', 'bueno', etc.) a formato BD ('E', 'B', 'S', 'I')
 const mapearNivelLogro = (nivelFrontend) => {
   const mapeo = {
     'excelente': 'E',
@@ -33,12 +35,10 @@ export const getAll = async (req, res) => {
 
     const whereClause = {};
 
-    // mapear query ?estado= a columna real
     if (estado) {
       whereClause.estado_empresa = estado;
     }
 
-    // Búsqueda por múltiples campos
     if (search) {
       const like = `%${search}%`;
       whereClause[Op.or] = [
@@ -621,6 +621,11 @@ export const getPlanPractica = async (req, res) => {
         pp.id_plan_practica,
         pp.id_practica,
         pp.fecha_creacion AS fecha_creacion_plan,
+        pp.maestro_guia_nombre,
+        pp.maestro_guia_rut,
+        pp.maestro_guia_cargo,
+        pp.maestro_guia_email,
+        pp.maestro_guia_telefono,
         pr.id_estudiante,
         pr.id_oferta,
         esp.id_especialidad,
@@ -1207,10 +1212,6 @@ export const getMiEmpresa = async (req, res) => {
 
 // ==================== EVALUACIÓN FINAL (SISTEMA NUEVO) ====================
 
-/**
- * Obtener estructura de evaluación completa según la especialidad del practicante
- * GET /empresas/practicantes/:id_practica/estructura-evaluacion
- */
 export const getEstructuraEvaluacion = async (req, res) => {
   try {
     const id_usuario = req.usuario?.id;
@@ -1322,10 +1323,6 @@ export const getEstructuraEvaluacion = async (req, res) => {
   }
 };
 
-/**
- * ✅ Verificar evaluación final (CORREGIDA - usa tabla evaluaciones_finales)
- * GET /empresas/practicantes/:id_practica/evaluacion-final/existe
- */
 export const verificarEvaluacionFinal = async (req, res) => {
   try {
     const id_usuario = req.usuario?.id;
@@ -1388,10 +1385,7 @@ export const verificarEvaluacionFinal = async (req, res) => {
   }
 };
 
-/**
- * ✅ Crear evaluación final (CORREGIDA - usa tabla evaluaciones_finales)
- * POST /empresas/practicantes/:id_practica/evaluacion-final
- */
+// ✅ FUNCIÓN CORREGIDA CON id_estudiante e id_profesor_guia
 export const crearEvaluacionFinal = async (req, res) => {
   const t = await sequelize.transaction();
   try {
@@ -1414,9 +1408,11 @@ export const crearEvaluacionFinal = async (req, res) => {
       return res.status(400).json({ error: 'Debe evaluar las competencias de empleabilidad' });
     }
 
+    // ✅ OBTENER id_estudiante e id_profesor_guia
     const verificacion = await sequelize.query(
-      `SELECT pr.id_practica, pr.horas_completadas, of.duracion_horas
-       FROM siggip.practicas pr JOIN siggip.ofertas_practica of ON of.id_oferta = pr.id_oferta
+      `SELECT pr.id_practica, pr.horas_completadas, pr.id_estudiante, pr.id_profesor_guia, of.duracion_horas
+       FROM siggip.practicas pr 
+       JOIN siggip.ofertas_practica of ON of.id_oferta = pr.id_oferta
        WHERE pr.id_practica = :id_practica AND of.id_empresa = :id_empresa`,
       { replacements: { id_practica, id_empresa }, type: sequelize.QueryTypes.SELECT, transaction: t }
     );
@@ -1441,17 +1437,45 @@ export const crearEvaluacionFinal = async (req, res) => {
     const sumaAreas = evaluaciones_areas.reduce((sum, a) => sum + parseFloat(a.calificacion || 0), 0);
     const promedioAreas = (sumaAreas / evaluaciones_areas.length).toFixed(2);
 
+    // ✅ INSERTAR CON id_estudiante e id_profesor_guia
     const upsertEvaluacion = await sequelize.query(
-      `INSERT INTO siggip.evaluaciones_finales (id_practica, calificacion_empresa, comentarios_empresa, fecha_evaluacion_empresa, estado_evaluacion)
-       VALUES (:id_practica, :calificacion_empresa, :comentarios_empresa, CURRENT_TIMESTAMP, 'en_proceso')
+      `INSERT INTO siggip.evaluaciones_finales (
+         id_practica, 
+         id_estudiante, 
+         id_profesor_guia, 
+         calificacion_empresa, 
+         comentarios_empresa, 
+         fecha_evaluacion_empresa, 
+         estado_evaluacion
+       )
+       VALUES (
+         :id_practica, 
+         :id_estudiante, 
+         :id_profesor_guia, 
+         :calificacion_empresa, 
+         :comentarios_empresa, 
+         CURRENT_TIMESTAMP, 
+         'en_proceso'
+       )
        ON CONFLICT (id_practica) DO UPDATE SET
          calificacion_empresa = EXCLUDED.calificacion_empresa,
          comentarios_empresa = EXCLUDED.comentarios_empresa,
          fecha_evaluacion_empresa = CURRENT_TIMESTAMP,
-         estado_evaluacion = 'en_proceso'
+         estado_evaluacion = 'en_proceso',
+         id_estudiante = EXCLUDED.id_estudiante,
+         id_profesor_guia = EXCLUDED.id_profesor_guia
        RETURNING id_evaluacion, estado_evaluacion`,
-      { replacements: { id_practica, calificacion_empresa: promedioAreas, comentarios_empresa: comentarios_generales || null },
-        type: sequelize.QueryTypes.INSERT, transaction: t }
+      { 
+        replacements: { 
+          id_practica, 
+          id_estudiante: practica.id_estudiante, 
+          id_profesor_guia: practica.id_profesor_guia, 
+          calificacion_empresa: promedioAreas, 
+          comentarios_empresa: comentarios_generales || null 
+        },
+        type: sequelize.QueryTypes.INSERT, 
+        transaction: t 
+      }
     );
 
     const resultado = upsertEvaluacion[0][0];
@@ -1533,10 +1557,7 @@ export const crearEvaluacionFinal = async (req, res) => {
   }
 };
 
-/**
- * ✅ NUEVA: Finalizar evaluación final
- * POST /empresas/practicantes/:id_practica/evaluacion-final/finalizar
- */
+// ✅ FUNCIÓN CORREGIDA - Actualiza estado_evaluacion a 'completada'
 export const finalizarEvaluacionFinal = async (req, res) => {
   const t = await sequelize.transaction();
   try {
@@ -1597,8 +1618,11 @@ export const finalizarEvaluacionFinal = async (req, res) => {
       });
     }
 
+    // ✅ ACTUALIZAR ESTADO A 'completada'
     await sequelize.query(
-      `UPDATE siggip.evaluaciones_finales SET estado_evaluacion = 'completada', fecha_evaluacion_empresa = CURRENT_TIMESTAMP
+      `UPDATE siggip.evaluaciones_finales 
+       SET estado_evaluacion = 'completada', 
+           fecha_evaluacion_empresa = CURRENT_TIMESTAMP
        WHERE id_practica = :id_practica`,
       { replacements: { id_practica }, type: sequelize.QueryTypes.UPDATE, transaction: t }
     );
@@ -1618,10 +1642,6 @@ export const finalizarEvaluacionFinal = async (req, res) => {
   }
 };
 
-/**
- * ✅ Obtener evaluación final (CORREGIDA - usa tabla evaluaciones_finales)
- * GET /empresas/practicantes/:id_practica/evaluacion-final
- */
 export const getEvaluacionFinal = async (req, res) => {
   try {
     const id_usuario = req.usuario?.id;
@@ -1702,10 +1722,7 @@ export const getEvaluacionFinal = async (req, res) => {
   }
 };
 
-/**
- * ✅ Actualizar evaluación final (CORREGIDA - usa tabla evaluaciones_finales)
- * PUT /empresas/practicantes/:id_practica/evaluacion-final
- */
+// ✅ FUNCIÓN CORREGIDA CON id_estudiante e id_profesor_guia
 export const actualizarEvaluacionFinal = async (req, res) => {
   const t = await sequelize.transaction();
   try {
@@ -1719,8 +1736,10 @@ export const actualizarEvaluacionFinal = async (req, res) => {
     const { id_practica } = req.params;
     const { evaluaciones_areas, evaluaciones_tareas, evaluaciones_empleabilidad, maestro_guia, comentarios_generales } = req.body;
 
+    // ✅ OBTENER id_estudiante e id_profesor_guia
     const verificacion = await sequelize.query(
-      `SELECT pr.id_practica FROM siggip.practicas pr
+      `SELECT pr.id_practica, pr.id_estudiante, pr.id_profesor_guia 
+       FROM siggip.practicas pr
        JOIN siggip.ofertas_practica of ON of.id_oferta = pr.id_oferta
        WHERE pr.id_practica = :id_practica AND of.id_empresa = :id_empresa`,
       { replacements: { id_practica, id_empresa }, type: sequelize.QueryTypes.SELECT, transaction: t }
@@ -1730,6 +1749,8 @@ export const actualizarEvaluacionFinal = async (req, res) => {
       await t.rollback();
       return res.status(404).json({ error: 'Práctica no encontrada o no autorizada' });
     }
+
+    const practica = verificacion[0];
 
     const evaluacion = await sequelize.query(
       `SELECT estado_evaluacion FROM siggip.evaluaciones_finales WHERE id_practica = :id_practica`,
@@ -1752,13 +1773,26 @@ export const actualizarEvaluacionFinal = async (req, res) => {
     const sumaAreas = evaluaciones_areas.reduce((sum, a) => sum + parseFloat(a.calificacion || 0), 0);
     const promedioAreas = (sumaAreas / evaluaciones_areas.length).toFixed(2);
 
+    // ✅ ACTUALIZAR CON id_estudiante e id_profesor_guia
     await sequelize.query(
       `UPDATE siggip.evaluaciones_finales
-       SET calificacion_empresa = :calificacion_empresa, comentarios_empresa = :comentarios_empresa,
-           fecha_evaluacion_empresa = CURRENT_TIMESTAMP
+       SET calificacion_empresa = :calificacion_empresa, 
+           comentarios_empresa = :comentarios_empresa,
+           fecha_evaluacion_empresa = CURRENT_TIMESTAMP,
+           id_estudiante = :id_estudiante,
+           id_profesor_guia = :id_profesor_guia
        WHERE id_practica = :id_practica`,
-      { replacements: { id_practica, calificacion_empresa: promedioAreas, comentarios_empresa: comentarios_generales || null },
-        type: sequelize.QueryTypes.UPDATE, transaction: t }
+      { 
+        replacements: { 
+          id_practica, 
+          id_estudiante: practica.id_estudiante,
+          id_profesor_guia: practica.id_profesor_guia,
+          calificacion_empresa: promedioAreas, 
+          comentarios_empresa: comentarios_generales || null 
+        },
+        type: sequelize.QueryTypes.UPDATE, 
+        transaction: t 
+      }
     );
 
     await sequelize.query(`DELETE FROM siggip.evaluaciones_areas_competencia WHERE id_practica = :id_practica AND evaluador_tipo = 'maestro_guia'`,
