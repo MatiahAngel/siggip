@@ -14,5 +14,5 @@ Sistema web basado en arquitectura de tres capas para gestionar publicación de 
 
 ### Clonar
 ```bash
-git clone https://github.com/usuario/siggip.git
+git clone hhttps://github.com/MatiahAngel/siggip.git
 cd siggip
