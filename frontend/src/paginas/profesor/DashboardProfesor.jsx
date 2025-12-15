@@ -661,7 +661,10 @@ function SeccionBitacoras({ bitacoras, loading, estudiantes, onVerEstudiante }) 
   });
 
   // Calcular estadísticas
-  const totalHoras = bitacoras.reduce((sum, act) => sum + (act.horas_dedicadas || 0), 0);
+  const totalHoras = bitacoras.reduce((sum, act) => {
+    const horas = parseFloat(act.horas_dedicadas) || 0;
+    return sum + horas;
+  }, 0);
   const actividadesPendientes = bitacoras.filter(act => act.estado_actividad === 'pendiente').length;
   const actividadesValidadas = bitacoras.filter(act => act.estado_actividad === 'validada').length;
 
@@ -718,7 +721,7 @@ function SeccionBitacoras({ bitacoras, loading, estudiantes, onVerEstudiante }) 
             </div>
             <div>
               <p className="text-sm text-gray-600">Horas Totales</p>
-              <p className="text-2xl font-black text-gray-900">{totalHoras}</p>
+              <p className="text-2xl font-black text-gray-900">{totalHoras.toFixed(1)}</p>
             </div>
           </div>
         </div>
