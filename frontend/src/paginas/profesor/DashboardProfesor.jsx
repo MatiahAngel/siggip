@@ -1,18 +1,19 @@
 // 📁 UBICACIÓN: frontend/src/paginas/profesor/DashboardProfesor.jsx
-// 🎨 Dashboard Profesor con datos reales y navegación
-// ✅ ACTUALIZADO: Importa modal completo con tabs de Bitácora y Evaluaciones
+// 🎨 Dashboard Profesor con Bitácoras integradas
+// ✅ ACTUALIZADO: Sección Bitácoras reemplaza Informes
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { 
   Users, FileText, Clock, CheckCircle, AlertCircle, TrendingUp,
   Calendar, Building2, Award, Eye, Bell, BookOpen, Activity,
-  Briefcase, ChevronRight, Star, BarChart3
+  Briefcase, ChevronRight, Star, BarChart3, Filter, Search
 } from 'lucide-react';
 import {
   obtenerPerfilProfesor,
   obtenerEstadisticasProfesor,
-  obtenerMisEstudiantes
+  obtenerMisEstudiantes,
+  obtenerBitacoraEstudiante
 } from '../../servicios/api/profesoresService';
 import ModalDetalleEstudiante from '../../components/profesor/ModalDetalleEstudiante';
 
@@ -33,6 +34,8 @@ export default function DashboardProfesor() {
   });
   const [estudiantes, setEstudiantes] = useState([]);
   const [estudianteSeleccionado, setEstudianteSeleccionado] = useState(null);
+  const [todasBitacoras, setTodasBitacoras] = useState([]);
+  const [loadingBitacoras, setLoadingBitacoras] = useState(false);
 
   useEffect(() => {
     cargarDatos();
@@ -68,6 +71,48 @@ export default function DashboardProfesor() {
       setLoading(false);
     }
   };
+
+  const cargarTodasLasBitacoras = async () => {
+    try {
+      setLoadingBitacoras(true);
+      const bitacorasPromises = estudiantes.map(est => 
+        obtenerBitacoraEstudiante(est.id_practica)
+          .then(bitacora => 
+            bitacora.map(actividad => ({
+              ...actividad,
+              estudiante: est,
+              nombreEstudiante: `${est.estudiante_nombre} ${est.apellido_paterno || ''}`.trim(),
+              empresaNombre: est.empresa_nombre
+            }))
+          )
+          .catch(err => {
+            console.error(`Error cargando bitácora de ${est.estudiante_nombre}:`, err);
+            return [];
+          })
+      );
+
+      const results = await Promise.all(bitacorasPromises);
+      const todasLasActividades = results.flat();
+
+      // Ordenar por fecha más reciente
+      todasLasActividades.sort((a, b) => 
+        new Date(b.fecha_actividad) - new Date(a.fecha_actividad)
+      );
+
+      setTodasBitacoras(todasLasActividades);
+      console.log('✅ Bitácoras cargadas:', todasLasActividades.length);
+    } catch (error) {
+      console.error('❌ Error cargando bitácoras:', error);
+    } finally {
+      setLoadingBitacoras(false);
+    }
+  };
+
+  useEffect(() => {
+    if (activeSection === 'bitacoras' && todasBitacoras.length === 0 && estudiantes.length > 0) {
+      cargarTodasLasBitacoras();
+    }
+  }, [activeSection, estudiantes]);
 
   if (loading) {
     return (
@@ -112,10 +157,10 @@ export default function DashboardProfesor() {
                 onClick={() => setActiveSection('estudiantes')} 
               />
               <NavLink 
-                icon="📝" 
-                label="Informes" 
-                active={activeSection === 'informes'} 
-                onClick={() => setActiveSection('informes')} 
+                icon="📋" 
+                label="Bitácoras" 
+                active={activeSection === 'bitacoras'} 
+                onClick={() => setActiveSection('bitacoras')} 
               />
               <NavLink 
                 icon="⭐" 
@@ -347,10 +392,10 @@ export default function DashboardProfesor() {
                       />
                       <ActionButton
                         icon={FileText}
-                        label="Revisar Informes"
-                        description="Ver pendientes"
+                        label="Ver Bitácoras"
+                        description="Actividades registradas"
                         color="orange"
-                        onClick={() => setActiveSection('informes')}
+                        onClick={() => setActiveSection('bitacoras')}
                       />
                       <ActionButton
                         icon={Award}
@@ -378,7 +423,7 @@ export default function DashboardProfesor() {
                     <div>
                       <h4 className="font-bold text-lg mb-1">💡 Consejo del Día</h4>
                       <p className="text-blue-100 text-sm leading-relaxed">
-                        Revisa las evaluaciones dentro de las primeras 48 horas para dar feedback oportuno a tus estudiantes.
+                        Revisa las bitácoras y evaluaciones dentro de las primeras 48 horas para dar feedback oportuno a tus estudiantes.
                       </p>
                     </div>
                   </div>
@@ -395,12 +440,13 @@ export default function DashboardProfesor() {
           />
         )}
 
-        {activeSection === 'informes' && (
-          <div className="bg-white rounded-2xl shadow-xl p-8 text-center">
-            <FileText className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-2xl font-bold text-gray-900 mb-2">Sección de Informes</h3>
-            <p className="text-gray-600">Próximamente...</p>
-          </div>
+        {activeSection === 'bitacoras' && (
+          <SeccionBitacoras 
+            bitacoras={todasBitacoras}
+            loading={loadingBitacoras}
+            estudiantes={estudiantes}
+            onVerEstudiante={(est) => setEstudianteSeleccionado(est)}
+          />
         )}
 
         {activeSection === 'evaluaciones' && (
@@ -412,7 +458,7 @@ export default function DashboardProfesor() {
         )}
       </div>
 
-      {/* Modal Detalle Estudiante - Ahora con tabs de Bitácora y Evaluaciones */}
+      {/* Modal Detalle Estudiante */}
       {estudianteSeleccionado && (
         <ModalDetalleEstudiante
           estudiante={estudianteSeleccionado}
@@ -580,6 +626,299 @@ function SeccionEstudiantes({ estudiantes, onVerDetalle }) {
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+function SeccionBitacoras({ bitacoras, loading, estudiantes, onVerEstudiante }) {
+  const [filtroEstudiante, setFiltroEstudiante] = useState('todos');
+  const [filtroEstado, setFiltroEstado] = useState('todos');
+  const [busqueda, setBusqueda] = useState('');
+
+  const bitacorasFiltradas = bitacoras.filter(actividad => {
+    // Filtrar por estudiante
+    if (filtroEstudiante !== 'todos') {
+      const estudianteId = parseInt(filtroEstudiante);
+      if (actividad.estudiante?.id_practica !== estudianteId) return false;
+    }
+
+    // Filtrar por estado
+    if (filtroEstado !== 'todos') {
+      if (actividad.estado_actividad !== filtroEstado) return false;
+    }
+
+    // Filtrar por búsqueda
+    if (busqueda) {
+      const searchLower = busqueda.toLowerCase();
+      const matchDescripcion = actividad.descripcion_actividad?.toLowerCase().includes(searchLower);
+      const matchEstudiante = actividad.nombreEstudiante?.toLowerCase().includes(searchLower);
+      const matchEmpresa = actividad.empresaNombre?.toLowerCase().includes(searchLower);
+      
+      if (!matchDescripcion && !matchEstudiante && !matchEmpresa) return false;
+    }
+
+    return true;
+  });
+
+  // Calcular estadísticas
+  const totalHoras = bitacoras.reduce((sum, act) => sum + (act.horas_dedicadas || 0), 0);
+  const actividadesPendientes = bitacoras.filter(act => act.estado_actividad === 'pendiente').length;
+  const actividadesValidadas = bitacoras.filter(act => act.estado_actividad === 'validada').length;
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div>
+        <h2 className="text-3xl font-black text-gray-900">📋 Bitácoras de Estudiantes</h2>
+        <p className="text-gray-600">Revisa todas las actividades registradas por tus estudiantes</p>
+      </div>
+
+      {/* Estadísticas Rápidas */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="bg-white rounded-xl p-4 border-2 border-blue-200">
+          <div className="flex items-center gap-3">
+            <div className="p-3 bg-blue-100 rounded-lg">
+              <Activity className="w-6 h-6 text-blue-600" />
+            </div>
+            <div>
+              <p className="text-sm text-gray-600">Total Actividades</p>
+              <p className="text-2xl font-black text-gray-900">{bitacoras.length}</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-xl p-4 border-2 border-green-200">
+          <div className="flex items-center gap-3">
+            <div className="p-3 bg-green-100 rounded-lg">
+              <CheckCircle className="w-6 h-6 text-green-600" />
+            </div>
+            <div>
+              <p className="text-sm text-gray-600">Validadas</p>
+              <p className="text-2xl font-black text-gray-900">{actividadesValidadas}</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-xl p-4 border-2 border-yellow-200">
+          <div className="flex items-center gap-3">
+            <div className="p-3 bg-yellow-100 rounded-lg">
+              <AlertCircle className="w-6 h-6 text-yellow-600" />
+            </div>
+            <div>
+              <p className="text-sm text-gray-600">Pendientes</p>
+              <p className="text-2xl font-black text-gray-900">{actividadesPendientes}</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-xl p-4 border-2 border-purple-200">
+          <div className="flex items-center gap-3">
+            <div className="p-3 bg-purple-100 rounded-lg">
+              <Clock className="w-6 h-6 text-purple-600" />
+            </div>
+            <div>
+              <p className="text-sm text-gray-600">Horas Totales</p>
+              <p className="text-2xl font-black text-gray-900">{totalHoras}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Filtros y Búsqueda */}
+      <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {/* Búsqueda */}
+          <div className="relative">
+            <Search className="w-5 h-5 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
+            <input
+              type="text"
+              placeholder="Buscar actividad, estudiante, empresa..."
+              value={busqueda}
+              onChange={(e) => setBusqueda(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+            />
+          </div>
+
+          {/* Filtro por Estudiante */}
+          <div className="relative">
+            <Filter className="w-5 h-5 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
+            <select
+              value={filtroEstudiante}
+              onChange={(e) => setFiltroEstudiante(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent appearance-none"
+            >
+              <option value="todos">Todos los estudiantes</option>
+              {estudiantes.map(est => (
+                <option key={est.id_practica} value={est.id_practica}>
+                  {est.estudiante_nombre} {est.apellido_paterno}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Filtro por Estado */}
+          <div className="relative">
+            <Filter className="w-5 h-5 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
+            <select
+              value={filtroEstado}
+              onChange={(e) => setFiltroEstado(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent appearance-none"
+            >
+              <option value="todos">Todos los estados</option>
+              <option value="pendiente">Pendientes</option>
+              <option value="validada">Validadas</option>
+              <option value="rechazada">Rechazadas</option>
+            </select>
+          </div>
+        </div>
+
+        {(filtroEstudiante !== 'todos' || filtroEstado !== 'todos' || busqueda) && (
+          <div className="mt-4 flex items-center gap-2">
+            <span className="text-sm text-gray-600">
+              Mostrando {bitacorasFiltradas.length} de {bitacoras.length} actividades
+            </span>
+            <button
+              onClick={() => {
+                setFiltroEstudiante('todos');
+                setFiltroEstado('todos');
+                setBusqueda('');
+              }}
+              className="text-sm text-green-600 hover:text-green-700 font-medium"
+            >
+              Limpiar filtros
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* Lista de Actividades */}
+      <div className="bg-white rounded-2xl shadow-lg border border-gray-100">
+        {loading ? (
+          <div className="p-12 text-center">
+            <div className="w-12 h-12 border-4 border-green-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+            <p className="text-gray-600 font-medium">Cargando bitácoras...</p>
+          </div>
+        ) : bitacorasFiltradas.length > 0 ? (
+          <div className="divide-y divide-gray-200">
+            {bitacorasFiltradas.map((actividad, index) => (
+              <ActividadBitacoraItem 
+                key={actividad.id_actividad_bitacora || index} 
+                actividad={actividad}
+                onVerEstudiante={onVerEstudiante}
+              />
+            ))}
+          </div>
+        ) : (
+          <div className="p-12 text-center">
+            <FileText className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+            <p className="text-xl font-bold text-gray-900 mb-2">No hay actividades</p>
+            <p className="text-gray-600">
+              {busqueda || filtroEstudiante !== 'todos' || filtroEstado !== 'todos'
+                ? 'No se encontraron actividades con los filtros aplicados'
+                : 'Aún no hay actividades registradas en las bitácoras'
+              }
+            </p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function ActividadBitacoraItem({ actividad, onVerEstudiante }) {
+  const [expanded, setExpanded] = useState(false);
+
+  return (
+    <div className="p-6 hover:bg-gray-50 transition-colors">
+      {/* Header */}
+      <div className="flex items-start justify-between mb-3">
+        <div className="flex-1">
+          <div className="flex items-center gap-3 mb-2">
+            <button
+              onClick={() => actividad.estudiante && onVerEstudiante(actividad.estudiante)}
+              className="font-bold text-green-600 hover:text-green-700 hover:underline"
+            >
+              {actividad.nombreEstudiante}
+            </button>
+            <span className="text-gray-400">•</span>
+            <span className="text-sm text-gray-600">{actividad.empresaNombre}</span>
+            <span className={`px-2 py-1 rounded-full text-xs font-bold ${
+              actividad.estado_actividad === 'validada' 
+                ? 'bg-green-100 text-green-700' 
+                : actividad.estado_actividad === 'rechazada'
+                  ? 'bg-red-100 text-red-700'
+                  : 'bg-yellow-100 text-yellow-700'
+            }`}>
+              {actividad.estado_actividad === 'validada' && '✅ Validada'}
+              {actividad.estado_actividad === 'rechazada' && '❌ Rechazada'}
+              {actividad.estado_actividad === 'pendiente' && '⏳ Pendiente'}
+            </span>
+          </div>
+          
+          <div className="flex items-center gap-4 text-sm text-gray-600 mb-2">
+            <span className="flex items-center gap-1">
+              <Calendar className="w-4 h-4" />
+              {new Date(actividad.fecha_actividad).toLocaleDateString('es-CL', {
+                day: 'numeric',
+                month: 'long',
+                year: 'numeric'
+              })}
+            </span>
+            <span className="flex items-center gap-1">
+              <Clock className="w-4 h-4 text-blue-600" />
+              <strong>{actividad.horas_dedicadas || 0} horas</strong>
+            </span>
+          </div>
+
+          <p className="text-gray-900 leading-relaxed">
+            {actividad.descripcion_actividad}
+          </p>
+        </div>
+
+        <button
+          onClick={() => setExpanded(!expanded)}
+          className="ml-4 p-2 hover:bg-gray-200 rounded-lg transition-colors"
+        >
+          {expanded ? (
+            <ChevronRight className="w-5 h-5 text-gray-600 rotate-90 transition-transform" />
+          ) : (
+            <ChevronRight className="w-5 h-5 text-gray-600" />
+          )}
+        </button>
+      </div>
+
+      {/* Detalles expandibles */}
+      {expanded && (
+        <div className="mt-4 pt-4 border-t border-gray-200 space-y-3">
+          {actividad.equipos_utilizados && (
+            <div className="bg-blue-50 rounded-lg p-3">
+              <p className="text-xs font-bold text-blue-900 mb-1">🔧 Equipos Utilizados:</p>
+              <p className="text-sm text-blue-800">{actividad.equipos_utilizados}</p>
+            </div>
+          )}
+          
+          {actividad.herramientas_utilizadas && (
+            <div className="bg-purple-50 rounded-lg p-3">
+              <p className="text-xs font-bold text-purple-900 mb-1">🛠️ Herramientas:</p>
+              <p className="text-sm text-purple-800">{actividad.herramientas_utilizadas}</p>
+            </div>
+          )}
+          
+          {actividad.normas_seguridad_aplicadas && (
+            <div className="bg-orange-50 rounded-lg p-3">
+              <p className="text-xs font-bold text-orange-900 mb-1">⚠️ Normas de Seguridad:</p>
+              <p className="text-sm text-orange-800">{actividad.normas_seguridad_aplicadas}</p>
+            </div>
+          )}
+          
+          {actividad.observaciones && (
+            <div className="bg-green-50 rounded-lg p-3">
+              <p className="text-xs font-bold text-green-900 mb-1">💬 Comentarios Empresa:</p>
+              <p className="text-sm text-green-800">{actividad.observaciones}</p>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

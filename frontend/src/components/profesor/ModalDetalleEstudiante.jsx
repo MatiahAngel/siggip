@@ -1,10 +1,10 @@
 // 📁 UBICACIÓN: frontend/src/componentes/profesor/ModalDetalleEstudiante.jsx
-// 🎨 Modal con Tabs: Bitácora | Evaluaciones
+// 🎨 Modal con Tabs: Bitácora | Evaluaciones (con tareas agrupadas por área)
 
 import { useState, useEffect } from 'react';
 import { 
   X, Calendar, Clock, Eye, FileText, ChevronDown, ChevronUp, 
-  CheckCircle, XCircle, Award, AlertCircle
+  CheckCircle, XCircle, Award, AlertCircle, ClipboardList
 } from 'lucide-react';
 import { 
   obtenerBitacoraEstudiante,
@@ -337,6 +337,74 @@ function TabEvaluacion({ evaluacion, loading, estudiante }) {
     );
   }
 
+  // Función para convertir nivel_logro a puntos
+  const convertirNivelAPuntos = (nivel) => {
+    const conversion = {
+      'E': 4,  // Excelente
+      'B': 3,  // Bueno
+      'S': 2,  // Suficiente
+      'I': 1   // Insuficiente
+    };
+    return conversion[nivel] || 0;
+  };
+
+  // Función para calcular nota de 1-7 basada en puntos obtenidos
+  const calcularNotaArea = (tareas) => {
+    if (!tareas || tareas.length === 0) return '1.0';
+    
+    // Calcular puntos obtenidos
+    const puntosObtenidos = tareas.reduce((acc, tarea) => {
+      return acc + convertirNivelAPuntos(tarea.nivel_logro);
+    }, 0);
+    
+    // Calcular puntos máximos posibles (4 puntos por tarea)
+    const puntosMaximos = tareas.length * 4;
+    
+    // Calcular porcentaje
+    const porcentaje = puntosObtenidos / puntosMaximos;
+    
+    // Convertir a escala 1-7 (fórmula chilena)
+    // Nota = (porcentaje × 6) + 1
+    const nota = (porcentaje * 6) + 1;
+    
+    return nota.toFixed(1);
+  };
+
+  // Agrupar tareas por área de competencia
+  const agruparTareasPorArea = () => {
+    if (!evaluacion.evaluaciones_tareas || evaluacion.evaluaciones_tareas.length === 0) {
+      return [];
+    }
+
+    const tareasPorArea = {};
+    
+    evaluacion.evaluaciones_tareas
+      .filter(tarea => tarea.fue_realizada)
+      .forEach(tarea => {
+        const areaId = tarea.id_area_competencia;
+        if (!tareasPorArea[areaId]) {
+          tareasPorArea[areaId] = {
+            id_area: areaId,
+            tareas: []
+          };
+        }
+        tareasPorArea[areaId].tareas.push(tarea);
+      });
+
+    // Ordenar tareas por código dentro de cada área
+    Object.values(tareasPorArea).forEach(area => {
+      area.tareas.sort((a, b) => {
+        const codigoA = a.codigo_tarea || '';
+        const codigoB = b.codigo_tarea || '';
+        return codigoA.localeCompare(codigoB);
+      });
+    });
+
+    return Object.values(tareasPorArea).sort((a, b) => a.id_area - b.id_area);
+  };
+
+  const areasConTareas = agruparTareasPorArea();
+
   return (
     <div className="space-y-6">
       {/* Header Evaluación */}
@@ -382,12 +450,94 @@ function TabEvaluacion({ evaluacion, loading, estudiante }) {
         </div>
       </div>
 
-      {/* Áreas Evaluadas */}
+      {/* ✅ TAREAS AGRUPADAS POR ÁREA DE COMPETENCIA */}
+      {areasConTareas.length > 0 && areasConTareas.map((areaData, areaIndex) => {
+        // Buscar el nombre del área en evaluaciones_areas
+        const areaInfo = evaluacion.evaluaciones_areas?.find(
+          a => a.id_area_competencia === areaData.id_area && a.evaluador_tipo === 'maestro_guia'
+        );
+
+        return (
+          <div key={areaIndex} className="bg-white rounded-xl border-2 border-green-200 overflow-hidden">
+            {/* Header del Área */}
+            <div className="bg-gradient-to-r from-green-600 to-emerald-600 px-6 py-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <ClipboardList className="w-6 h-6 text-white" />
+                  <div>
+                    <h5 className="text-white font-black text-lg">
+                      {areaInfo?.nombre_area || `Área ${areaData.id_area}`}
+                    </h5>
+                    <p className="text-green-100 text-sm">
+                      {areaData.tareas.length} {areaData.tareas.length === 1 ? 'tarea' : 'tareas'}
+                    </p>
+                  </div>
+                </div>
+                <div className="bg-white px-4 py-2 rounded-lg">
+                  <p className="text-xs text-gray-600 font-semibold">Calificación Área</p>
+                  <p className="text-2xl font-black text-green-600">{calcularNotaArea(areaData.tareas)}</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Lista de Tareas */}
+            <div className="p-4 space-y-2 bg-green-50">
+              {areaData.tareas.map((tarea, tareaIndex) => (
+                <div 
+                  key={tareaIndex} 
+                  className="bg-white rounded-lg p-4 border border-green-200 hover:border-green-400 transition-all"
+                >
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="px-2 py-1 bg-green-100 text-green-800 text-xs font-black rounded">
+                          {tarea.codigo_tarea}
+                        </span>
+                        <span className={`px-2 py-1 rounded text-xs font-bold ${
+                          tarea.nivel_logro === 'E' ? 'bg-green-100 text-green-700' :
+                          tarea.nivel_logro === 'B' ? 'bg-blue-100 text-blue-700' :
+                          tarea.nivel_logro === 'S' ? 'bg-yellow-100 text-yellow-700' :
+                          'bg-red-100 text-red-700'
+                        }`}>
+                          {tarea.nivel_logro} - {
+                            tarea.nivel_logro === 'E' ? 'Excelente' :
+                            tarea.nivel_logro === 'B' ? 'Bueno' :
+                            tarea.nivel_logro === 'S' ? 'Suficiente' :
+                            'Insuficiente'
+                          }
+                        </span>
+                      </div>
+                      <p className="text-sm text-gray-900 font-medium leading-relaxed">
+                        {tarea.descripcion_tarea}
+                      </p>
+                      {tarea.comentarios && (
+                        <div className="mt-2 pt-2 border-t border-green-100">
+                          <p className="text-xs text-gray-600">
+                            <strong>💬 Comentarios:</strong> {tarea.comentarios}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                    <div className="text-right">
+                      <p className="text-3xl font-black text-green-600">
+                        {convertirNivelAPuntos(tarea.nivel_logro)}
+                      </p>
+                      <p className="text-xs text-gray-500">puntos</p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      })}
+
+      {/* Áreas Evaluadas (Calificaciones Generales) */}
       {evaluacion.evaluaciones_areas && evaluacion.evaluaciones_areas.length > 0 && (
         <div className="bg-white rounded-xl border border-gray-200 p-6">
           <h5 className="font-bold text-gray-900 mb-4 flex items-center gap-2">
             <Award className="w-5 h-5 text-purple-600" />
-            Áreas de Competencia Evaluadas ({evaluacion.evaluaciones_areas.length})
+            Resumen de Áreas de Competencia ({evaluacion.evaluaciones_areas.length})
           </h5>
           <div className="space-y-3">
             {evaluacion.evaluaciones_areas
