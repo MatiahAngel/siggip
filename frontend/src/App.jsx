@@ -17,6 +17,7 @@ import ListaOfertas from './paginas/admin/ofertas';
 import DashboardProfesor from './paginas/profesor/DashboardProfesor';
 import DashboardEstudiante from './paginas/estudiante/DashboardEstudiante';
 import DashboardEmpresa from './paginas/empresa/DashboardEmpresa';
+import ReportesPage from './paginas/admin/reportes/ReportesPage';
 
 const TempPage = ({ title }) => (
   <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -62,7 +63,7 @@ function App() {
           <Route path="/admin/empresas" element={<PrivateRoute roles={['administrador', 'directivo']}><Empresas /></PrivateRoute>} />
           <Route path="/admin/especialidades" element={<PrivateRoute roles={['administrador', 'directivo']}><ListaEspecialidades /></PrivateRoute>} />
           <Route path="/admin/ofertas" element={<PrivateRoute roles={['administrador', 'directivo']}><ListaOfertas /></PrivateRoute>} />
-          <Route path="/admin/reportes" element={<PrivateRoute roles={['administrador', 'directivo']}><TempPage title="Reportes" /></PrivateRoute>} />
+          <Route path="/admin/reportes" element={<PrivateRoute roles={['administrador']}><ReportesPage /></PrivateRoute>} />
           
           {/* Rutas Profesor */}
           <Route path="/profesor/dashboard" element={<PrivateRoute roles={['profesor']}><DashboardProfesor /></PrivateRoute>} />
